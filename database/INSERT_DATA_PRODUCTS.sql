@@ -1,0 +1,16 @@
+INSERT INTO product (ean,
+                     name,
+                     brand,
+                     description,
+                     weight_per_unit,
+                     units_per_box,
+                     expiration_days,
+                     manufactured_in)
+VALUES ('18411090013426',
+        "CRUZCAMPO Lata Retract FAhorro",
+        "CRUZCAMPO",
+        "CRUZCAMPO Lata Retract 24x33cl FAhorro",
+        0.362,
+        24,
+        365,
+        "ES");

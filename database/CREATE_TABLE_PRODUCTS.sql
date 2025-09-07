@@ -1,0 +1,15 @@
+CREATE TABLE PRODUCT (
+      id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      ean VARCHAR(20) NOT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
+      brand VARCHAR(100) NOT NULL,
+      description TEXT,
+      weight_per_unit DECIMAL(10,3),
+      units_per_box INT,
+      expiration_days INT,
+      manufactured_in VARCHAR(100) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
