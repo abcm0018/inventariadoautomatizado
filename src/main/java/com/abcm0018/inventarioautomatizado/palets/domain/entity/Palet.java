@@ -1,18 +1,14 @@
 package com.abcm0018.inventarioautomatizado.palets.domain.entity;
 
 import com.abcm0018.inventarioautomatizado.productos.domain.entity.Product;
-import com.abcm0018.inventarioautomatizado.productos.domain.entity.Status;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Date;
-import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 
 @Data
@@ -46,5 +42,6 @@ public class Palet {
     private LocalDateTime updatedAt;
 
     @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", referencedColumnName = "id")
     private Product product;
 }

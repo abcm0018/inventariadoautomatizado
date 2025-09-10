@@ -1,8 +1,8 @@
-package com.abcm0018.inventarioautomatizado.productos.service.mapper;
+package com.abcm0018.inventarioautomatizado.productos.mappers;
 
 import com.abcm0018.inventarioautomatizado.productos.domain.entity.Product;
-import com.abcm0018.inventarioautomatizado.productos.service.dto.ProductRequest;
-import com.abcm0018.inventarioautomatizado.productos.service.dto.ProductResponseDTO;
+import com.abcm0018.inventarioautomatizado.productos.dtos.ProductRequest;
+import com.abcm0018.inventarioautomatizado.productos.dtos.ProductResponseDTO;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

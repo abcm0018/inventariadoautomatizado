@@ -12,4 +12,5 @@ public interface PaletService {
     List<PaletDTO> getPaletsByEAN(String ean);
     PaletDTO getPaletsBySSCC(String sscc);
     List<PaletDTO> getPaletsByBatchNumber(String batchNumber);
+    List<PaletDTO> getPaletsByShift(String shift);
 }

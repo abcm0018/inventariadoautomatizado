@@ -11,5 +11,6 @@ public interface PaletRepository extends JpaRepository<Palet, Long> {
     Optional<Palet> findByEan(String ean);
     Optional<Palet> findBySscc(String sscc);
     Optional<List<Palet>> findByBatchNumber(String batchNumber); //Lote
+    Optional<List<Palet>> findByShift(String shift);
 }
 

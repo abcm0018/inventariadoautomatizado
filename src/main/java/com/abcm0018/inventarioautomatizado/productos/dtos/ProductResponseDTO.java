@@ -1,4 +1,4 @@
-package com.abcm0018.inventarioautomatizado.productos.service.dto;
+package com.abcm0018.inventarioautomatizado.productos.dtos;
 
 import lombok.*;
 

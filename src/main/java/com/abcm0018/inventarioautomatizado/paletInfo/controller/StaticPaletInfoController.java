@@ -3,7 +3,7 @@ package com.abcm0018.inventarioautomatizado.paletInfo.controller;
 import com.abcm0018.inventarioautomatizado.paletInfo.dtos.StaticPaletInfoDTO;
 import com.abcm0018.inventarioautomatizado.paletInfo.dtos.StaticPaletInfoRequest;
 import com.abcm0018.inventarioautomatizado.paletInfo.service.StaticPaletInfoService;
-import com.abcm0018.inventarioautomatizado.productos.service.dto.ProductResponseDTO;
+import com.abcm0018.inventarioautomatizado.productos.dtos.ProductResponseDTO;
 import com.abcm0018.inventarioautomatizado.shared.response.ResponseBuilder;
 import com.abcm0018.inventarioautomatizado.shared.response.StandardResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -65,7 +65,7 @@ public class StaticPaletInfoController {
 //                    {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema =
 //                    @Schema(implementation = HttpErrorResponse.class))})
 //    })
-    @DeleteMapping(value = "/{ean}")
+    @DeleteMapping(value = "/{sscc}")
     public StandardResponse<Void> deleteStaticPaletInfo(@PathVariable String sscc) {
         staticPaletInfoService.deleteStaticPaletInfo(sscc);
         log.info("Deleted static palet info with sscc: {}", sscc);
@@ -83,7 +83,7 @@ public class StaticPaletInfoController {
     @GetMapping(value = "")
     public StandardResponse<List<StaticPaletInfoDTO>> getAllProducts() {
         List<StaticPaletInfoDTO> response = staticPaletInfoService.getAllInfo();
-        log.info("List all static palet info: ");
+        log.info("List all static palet info: {} pallets found", response.size());
         return ResponseBuilder.with(HttpStatus.OK, true, "Successful response", response);
     }
 

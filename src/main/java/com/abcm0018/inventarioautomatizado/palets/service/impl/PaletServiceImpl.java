@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Time;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -40,13 +41,13 @@ public class PaletServiceImpl implements PaletService {
     @Override
     public void deletePalet(String sscc) {
         if (!PaletUtils.isSSCCValid(sscc)) {
-            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "El SSCC no tiene un formato válido", HttpStatus.BAD_REQUEST);
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "The SSCC does not have a valid format.", HttpStatus.BAD_REQUEST);
         }
         Optional<Palet> existPalet = paletRepository.findBySscc(sscc);
 
         Palet palet = existPalet.orElseThrow(() ->
                 new PaletsServiceException(CustomErrorCode.NOT_FOUND,
-                        "El Palet con SSCC " + sscc + " no existe",
+                        "The Pallet with SSCC " + sscc + " doesn't exist",
                         HttpStatus.BAD_REQUEST));
 
         paletRepository.delete(palet);
@@ -56,20 +57,26 @@ public class PaletServiceImpl implements PaletService {
     public PaletDTO updatePalet(String sscc, PaletRequest request){
 
         if (!PaletUtils.isSSCCValid(sscc)) {
-            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "El SSCC a eliminar no puede estar vacío", HttpStatus.BAD_REQUEST);
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "The SSCC to be deleted cannot be empty.", HttpStatus.BAD_REQUEST);
         }
         Palet existPalet = paletRepository.findBySscc(sscc).orElseThrow(() ->
                 new PaletsServiceException(CustomErrorCode.NOT_FOUND,
-                        "El Palet con SSCC " + sscc + " no existe",
+                        "The Pallet with SSCC " + sscc + " doesn't exist",
                         HttpStatus.BAD_REQUEST));
 
         StaticPaletInfo existInfo = staticPaletInfoRepository.findBySscc(sscc).orElseThrow(() ->
                 new PaletsServiceException(CustomErrorCode.NOT_FOUND,
-                        "El Palet con SSCC " + sscc + " no tiene información estática asociada",
+                        "The Pallet with SSCC " + sscc + " has no associated static information",
                         HttpStatus.BAD_REQUEST));
         Palet paledToUpdated = PaletMapper.toEntity(request);
+        paledToUpdated.setId(existPalet.getId());
+        paledToUpdated.setProduct(existPalet.getProduct());
         paledToUpdated.setProductionDate(parseDate(request.getProductionDate()));
         paledToUpdated.setExpirationDate(parseDate(request.getExpirationDate()));
+        paledToUpdated.setCreatedAt(existPalet.getCreatedAt());
+        paledToUpdated.setUpdatedAt(LocalDateTime.now());
+
+        paletRepository.save(paledToUpdated);
 
         return PaletDTOMapper.toDTO(paledToUpdated, existInfo);
 
@@ -83,7 +90,7 @@ public class PaletServiceImpl implements PaletService {
         return palets.stream()
                 .map(palet -> {
                     StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                            new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"Información estática del palet asociada no encontrada: " + palet.getEan(), HttpStatus.BAD_REQUEST));
+                            new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"Associated static pallet information not found: " + palet.getEan(), HttpStatus.BAD_REQUEST));
                     return PaletDTOMapper.toDTO(palet, staticPaletInfo);
                 }).toList();
     }
@@ -92,7 +99,7 @@ public class PaletServiceImpl implements PaletService {
     @CacheEvict(allEntries = true)
     public List<PaletDTO> getPaletsByEAN(String ean) {
         if(!PaletUtils.isEANValid(ean)){
-            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "El EAN no tiene un formato válido", HttpStatus.BAD_REQUEST);
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "The EAN does not have a valid format.", HttpStatus.BAD_REQUEST);
         }
         //Datos impresos
         List<Palet> palets = paletRepository.findAllByEan(ean);
@@ -100,7 +107,7 @@ public class PaletServiceImpl implements PaletService {
         return palets.stream()
                 .map(palet -> {
                     StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                            new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"Información estática del palet asociada no encontrada: " + palet.getEan(), HttpStatus.BAD_REQUEST));
+                            new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND, "The Pallet with EAN " + ean + " has no associated static information" + palet.getEan(), HttpStatus.BAD_REQUEST));
                     return PaletDTOMapper.toDTO(palet, staticPaletInfo);
                 }).toList();
     }
@@ -109,14 +116,14 @@ public class PaletServiceImpl implements PaletService {
     @CacheEvict(allEntries = true)
     public PaletDTO getPaletsBySSCC(String sscc) {
         if (!PaletUtils.isSSCCValid(sscc)) {
-            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "El SSCC no tiene un formato válido", HttpStatus.BAD_REQUEST);
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "The SSCC does not have a valid format.", HttpStatus.BAD_REQUEST);
         }
         //Datos impresos
         Palet palet = paletRepository.findBySscc(sscc).orElseThrow(() ->
-                new PaletsServiceException(CustomErrorCode.NOT_FOUND,"Palet no encontrado: " + sscc, HttpStatus.BAD_REQUEST));
+                new PaletsServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + sscc + " doesn't exist", HttpStatus.BAD_REQUEST));
         //Datos estáticos
         StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"Información estática del palet asociada no encontrada: " + palet.getEan(), HttpStatus.BAD_REQUEST));
+                new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + sscc + " has no associated static information", HttpStatus.BAD_REQUEST));
         //Crear un método para rellenar los campos estáticos del dto
         return PaletDTOMapper.toDTO(palet, staticPaletInfo);
     }
@@ -126,11 +133,24 @@ public class PaletServiceImpl implements PaletService {
     public List<PaletDTO> getPaletsByBatchNumber(String batchNumber) {
         //Datos impresos
         List<Palet> palets = paletRepository.findByBatchNumber(batchNumber).orElseThrow(() ->
-                new PaletsServiceException(CustomErrorCode.NOT_FOUND,"Palet no encontrado: " + batchNumber, HttpStatus.BAD_REQUEST));
+                new PaletsServiceException(CustomErrorCode.NOT_FOUND,"Pallet not found: " + batchNumber, HttpStatus.BAD_REQUEST));
         return palets.stream()
                 .map(palet -> {
                     StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                        new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"Información estática del palet asociada no encontrada: " + palet.getEan(), HttpStatus.BAD_REQUEST));
+                        new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + palet.getSscc() + " has no associated static information", HttpStatus.BAD_REQUEST));
+                    return PaletDTOMapper.toDTO(palet, staticPaletInfo);
+                }).toList();
+    }
+
+    @Override
+    @CacheEvict(allEntries = true)
+    public List<PaletDTO> getPaletsByShift(String shift) {
+        List<Palet> palets = paletRepository.findByShift(shift).orElseThrow(() ->
+                new PaletsServiceException(CustomErrorCode.NOT_FOUND,"Pallet not found: " + shift, HttpStatus.BAD_REQUEST));
+        return palets.stream()
+                .map(palet -> {
+                    StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
+                            new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + palet.getSscc() + " has no associated static information", HttpStatus.BAD_REQUEST));
                     return PaletDTOMapper.toDTO(palet, staticPaletInfo);
                 }).toList();
     }
@@ -142,7 +162,7 @@ public class PaletServiceImpl implements PaletService {
         } catch (Exception e) {
             throw new PaletsServiceException(
                     CustomErrorCode.BAD_REQUEST,
-                    "La fecha debe tener el formato dd/MM/yyyy. Valor recibido: " + dateStr,
+                    "The date must be in the format dd/MM/yyyy. Value received: " + dateStr,
                     HttpStatus.BAD_REQUEST,
                     e.getMessage()
             );

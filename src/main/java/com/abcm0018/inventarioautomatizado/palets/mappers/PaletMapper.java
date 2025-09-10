@@ -15,6 +15,7 @@ public class PaletMapper {
                 .ean(request.getEan())
                 .batchNumber(request.getBatchNumber())
                 .sscc(request.getSscc())
+                .time(request.getTime())
                 .shift(request.getShift())
                 .build();
     }

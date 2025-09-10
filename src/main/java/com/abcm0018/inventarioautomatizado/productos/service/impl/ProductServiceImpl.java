@@ -6,9 +6,10 @@ import com.abcm0018.inventarioautomatizado.productos.domain.entity.Product;
 import com.abcm0018.inventarioautomatizado.productos.domain.repository.ProductRepository;
 import com.abcm0018.inventarioautomatizado.productos.exceptions.ProductServiceException;
 import com.abcm0018.inventarioautomatizado.productos.service.ProductService;
-import com.abcm0018.inventarioautomatizado.productos.service.dto.ProductRequest;
-import com.abcm0018.inventarioautomatizado.productos.service.dto.ProductResponseDTO;
-import com.abcm0018.inventarioautomatizado.productos.service.mapper.ProductMapper;
+import com.abcm0018.inventarioautomatizado.productos.dtos.ProductRequest;
+import com.abcm0018.inventarioautomatizado.productos.dtos.ProductResponseDTO;
+import com.abcm0018.inventarioautomatizado.productos.mappers.ProductMapper;
+import com.abcm0018.inventarioautomatizado.shared.utils.ProductUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheConfig;
@@ -36,15 +37,11 @@ public class ProductServiceImpl implements ProductService {
     @CacheEvict(allEntries = true)
     public ProductResponseDTO addProduct(ProductRequest productRequest) {
 
-        if (productRequest == null) {
-            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "El request no puede ser null", HttpStatus.BAD_REQUEST);
-        }
-
         Optional<Product> existProduct = productRepository.findByEan(productRequest.getEan());
 
         if (existProduct.isPresent()) {
             throw new ProductServiceException(CustomErrorCode.BAD_REQUEST,
-                    "Ya existe un producto con el EAN: " + productRequest.getEan(),
+                    "There is already a product with the EAN: " + productRequest.getEan(),
                     HttpStatus.BAD_REQUEST);
         }
 
@@ -65,21 +62,21 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @CacheEvict(allEntries = true)
     public ProductResponseDTO updateProduct(String ean, ProductRequest data) {
-
-        if (data == null) {
-            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "El request no puede ser null", HttpStatus.BAD_REQUEST);
+        if(!ProductUtils.isEANValid(ean)){
+            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "The EAN does not have a valid format.", HttpStatus.BAD_REQUEST);
         }
 
         Product product = productRepository.findByEan(ean)
-                .orElseThrow(() -> new ProductServiceException(CustomErrorCode.NOT_FOUND,"Producto no encontrado: " + ean, HttpStatus.BAD_REQUEST));
+                .orElseThrow(() -> new ProductServiceException(CustomErrorCode.NOT_FOUND,"Product not found: " + ean, HttpStatus.NOT_FOUND));
 
         Product productToUpdate = ProductMapper.toEntity(data);
 
         if (StringUtils.isNotEmpty(data.getExpirationDay())) {
-            product.setExpirationDay(parseDate(data.getExpirationDay()));
+            productToUpdate.setExpirationDay(parseDate(data.getExpirationDay()));
         }
 
         productToUpdate.setId(product.getId());
+        productToUpdate.setCreatedAt(product.getCreatedAt());
         productToUpdate.setUpdatedAt(LocalDateTime.now());
 
         Product udpatedProduct = productRepository.save(productToUpdate);
@@ -90,12 +87,12 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @CacheEvict(allEntries = true)
     public void deleteProduct(String ean) {
-        if (StringUtils.isEmpty(ean)) {
-            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "El EAN a eliminar no puede estar vacío", HttpStatus.BAD_REQUEST);
+        if(!ProductUtils.isEANValid(ean)){
+            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "The EAN does not have a valid format.", HttpStatus.BAD_REQUEST);
         }
         Product product = productRepository.findByEan(ean)
                 .orElseThrow(() -> new ProductServiceException(CustomErrorCode.NOT_FOUND,
-                        "Producto no encontrado con EAN: " + ean, HttpStatus.NOT_FOUND));
+                        "Product not found with EAN: " + ean, HttpStatus.NOT_FOUND));
         productRepository.delete(product);
     }
 
@@ -111,11 +108,11 @@ public class ProductServiceImpl implements ProductService {
 
         validateInputFilter(ean, brand, initExpirationDate, endExpirationDate, expirationDate, manufacturedIn);
         if(StringUtils.isEmpty(initExpirationDate) && StringUtils.isNotEmpty(endExpirationDate)) {
-            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "Error rango inferior no puede ser nulo: initExpirationDate", HttpStatus.BAD_REQUEST);
+            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "Lower range error cannot be null: initExpirationDate", HttpStatus.BAD_REQUEST);
         }
 
         if(StringUtils.isNotEmpty(initExpirationDate) && StringUtils.isEmpty(endExpirationDate)) {
-            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "Error rango superior no puede ser nulo: endExpirationDate", HttpStatus.BAD_REQUEST);
+            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "Upper range error cannot be null: endExpirationDate", HttpStatus.BAD_REQUEST);
         }
 
         final List<Product> products = productRepository.findProducts(ean, brand, initExpirationDate, endExpirationDate, expirationDate, manufacturedIn);
@@ -139,27 +136,27 @@ public class ProductServiceImpl implements ProductService {
 
         // Validaciones
         if (ean != null && !ean.matches(eanRegex)) {
-            throw new IllegalArgumentException("EAN inválido. Debe contener 14 dígitos.");
+            throw new IllegalArgumentException("Invalid EAN. Must contain 14 digits.");
         }
 
         if (brand != null && !brand.matches(brandRegex)) {
-            throw new IllegalArgumentException("Marca inválida. Solo letras.");
+            throw new IllegalArgumentException("Invalid brand name. Letters only.");
         }
 
         if (initExpirationDate != null && !initExpirationDate.matches(dateRegex)) {
-            throw new IllegalArgumentException("Fecha de inicio inválida. Formato esperado: dd/mm/yyyy.");
+            throw new IllegalArgumentException("Invalid start date. Expected format: dd/mm/yyyy.");
         }
 
         if (endExpirationDate != null && !endExpirationDate.matches(dateRegex)) {
-            throw new IllegalArgumentException("Fecha de fin inválida. Formato esperado: dd/mm/yyyy.");
+            throw new IllegalArgumentException("Invalid end date. Expected format: dd/mm/yyyy.");
         }
 
         if (expirationDate != null && !expirationDate.matches(dateRegex)) {
-            throw new IllegalArgumentException("Fecha de expiración inválida. Formato esperado: dd/mm/yyyy.");
+            throw new IllegalArgumentException("Invalid expiration date. Expected format: dd/mm/yyyy.");
         }
 
         if (manufacturedIn != null && !manufacturedIn.matches(countryRegex)) {
-            throw new IllegalArgumentException("Código de país inválido. Debe ser ISO Alpha-2 (ej: ES, FR, US).");
+            throw new IllegalArgumentException("Invalid country code. Must be ISO Alpha-2 (e.g. ES, FR, US).");
         }
     }
 
@@ -171,7 +168,7 @@ public class ProductServiceImpl implements ProductService {
         } catch (Exception e) {
             throw new ProductServiceException(
                     CustomErrorCode.BAD_REQUEST,
-                    "La fecha debe tener el formato dd/MM/yyyy. Valor recibido: " + dateStr,
+                    "The date must be in the format dd/MM/yyyy. Value received: " + dateStr,
                     HttpStatus.BAD_REQUEST,
                     e.getMessage()
             );

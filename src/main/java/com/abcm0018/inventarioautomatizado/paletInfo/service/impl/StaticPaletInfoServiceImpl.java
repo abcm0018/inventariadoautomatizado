@@ -36,7 +36,7 @@ public class StaticPaletInfoServiceImpl implements StaticPaletInfoService {
         if (existInfo.isPresent()) {
             throw new StaticPaletInfoServiceException(
                     CustomErrorCode.BAD_REQUEST,
-                    "Ya existe una información estática para el producto con SSCC: " + infoRequest.getSscc(),
+                    "Static information for the product with SSCC already exists: " + infoRequest.getSscc(),
                     HttpStatus.BAD_REQUEST
             );
         }
@@ -54,14 +54,14 @@ public class StaticPaletInfoServiceImpl implements StaticPaletInfoService {
         if(!PaletUtils.isSSCCValid(sscc)){
             throw new StaticPaletInfoServiceException(
                     CustomErrorCode.BAD_REQUEST,
-                    "El SSCC no puede ser nulo o vacío",
+                    "The SSCC cannot be null or empty.",
                     HttpStatus.BAD_REQUEST
             );
         }
 
         StaticPaletInfo info = staticPaletInfoRepository.findBySscc(sscc)
                 .orElseThrow(() -> new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,
-                        "Información estática no encontrado con SSCC: " + sscc, HttpStatus.NOT_FOUND));
+                        "Static information not found with SSCC: " + sscc, HttpStatus.NOT_FOUND));
 
         info.setDeletedAt(LocalDateTime.now());
         staticPaletInfoRepository.save(info);
@@ -74,7 +74,7 @@ public class StaticPaletInfoServiceImpl implements StaticPaletInfoService {
         if(!PaletUtils.isSSCCValid(sscc)){
             throw new StaticPaletInfoServiceException(
                     CustomErrorCode.BAD_REQUEST,
-                    "El SSCC no puede ser nulo o vacío",
+                    "The SSCC cannot be null or empty.",
                     HttpStatus.BAD_REQUEST
             );
         }
@@ -82,14 +82,14 @@ public class StaticPaletInfoServiceImpl implements StaticPaletInfoService {
         StaticPaletInfo existingInfo = staticPaletInfoRepository.findBySscc(sscc)
                 .orElseThrow(() -> new StaticPaletInfoServiceException(
                         CustomErrorCode.NOT_FOUND,
-                        "Información estática no encontrada con SSCC: " + sscc,
+                        "The SSCC cannot be null or empty. " + sscc,
                         HttpStatus.BAD_REQUEST
                 ));
 
         if(existingInfo.getDeletedAt() != null) {
             throw new StaticPaletInfoServiceException(
                     CustomErrorCode.NOT_FOUND,
-                    "Información estática no encontrada con SSCC: " + sscc,
+                    "The SSCC cannot be null or empty. " + sscc,
                     HttpStatus.BAD_REQUEST
             );
         }
@@ -109,14 +109,14 @@ public class StaticPaletInfoServiceImpl implements StaticPaletInfoService {
         if(!PaletUtils.isSSCCValid(sscc)){
             throw new StaticPaletInfoServiceException(
                     CustomErrorCode.BAD_REQUEST,
-                    "El SSCC no puede ser nulo o vacío",
+                    "The SSCC cannot be null or empty.",
                     HttpStatus.BAD_REQUEST
             );
         }
         StaticPaletInfo info = staticPaletInfoRepository.findBySscc(sscc)
                 .orElseThrow(() -> new StaticPaletInfoServiceException(
                         CustomErrorCode.NOT_FOUND,
-                        "Información estática no encontrada con SSCC: " + sscc,
+                        " " + sscc,
                         HttpStatus.BAD_REQUEST
                 ));
 

@@ -1,4 +1,4 @@
-package com.abcm0018.inventarioautomatizado.productos.domain.entity;
+package com.abcm0018.inventarioautomatizado.paletInfoScans.domain;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -19,6 +19,12 @@ public class PaletInfoScan{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "value")
+    private String value;
+
+    @Column(name = "type")
+    private String type;
 
     @Column(name = "description_type", length = 255)
     private String description_type;

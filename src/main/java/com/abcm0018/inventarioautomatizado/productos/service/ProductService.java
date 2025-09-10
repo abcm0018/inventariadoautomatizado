@@ -1,10 +1,8 @@
 package com.abcm0018.inventarioautomatizado.productos.service;
 
-import com.abcm0018.inventarioautomatizado.productos.service.dto.ProductRequest;
-import com.abcm0018.inventarioautomatizado.productos.service.dto.ProductResponseDTO;
-import org.springframework.data.repository.query.Param;
+import com.abcm0018.inventarioautomatizado.productos.dtos.ProductRequest;
+import com.abcm0018.inventarioautomatizado.productos.dtos.ProductResponseDTO;
 
-import java.time.LocalDate;
 import java.util.List;
 
 public interface ProductService {

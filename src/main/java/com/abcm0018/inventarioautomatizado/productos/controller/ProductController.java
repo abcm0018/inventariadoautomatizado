@@ -3,8 +3,8 @@ package com.abcm0018.inventarioautomatizado.productos.controller;
 import com.abcm0018.inventarioautomatizado.shared.response.ResponseBuilder;
 import com.abcm0018.inventarioautomatizado.shared.response.StandardResponse;
 import com.abcm0018.inventarioautomatizado.productos.service.ProductService;
-import com.abcm0018.inventarioautomatizado.productos.service.dto.ProductRequest;
-import com.abcm0018.inventarioautomatizado.productos.service.dto.ProductResponseDTO;
+import com.abcm0018.inventarioautomatizado.productos.dtos.ProductRequest;
+import com.abcm0018.inventarioautomatizado.productos.dtos.ProductResponseDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -81,7 +81,7 @@ public class ProductController {
     @GetMapping(value = "")
     public StandardResponse<List<ProductResponseDTO>> getAllProducts() {
         List<ProductResponseDTO> response = productService.getAllProducts();
-        log.info("List all product: ");
+        log.info("List all product: {} pallets found", response.size());
         return ResponseBuilder.with(HttpStatus.OK, true, "Successful response", response);
     }
 
