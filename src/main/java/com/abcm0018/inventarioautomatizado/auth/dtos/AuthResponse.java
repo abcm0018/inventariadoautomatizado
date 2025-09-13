@@ -1,5 +1,6 @@
-package com.abcm0018.inventarioautomatizado.users.dtos;
+package com.abcm0018.inventarioautomatizado.auth.dtos;
 
+import com.abcm0018.inventarioautomatizado.users.dtos.UserResponseDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class AuthResponse {
-    private UserResponse user;
+    private UserResponseDTO user;
     //private String token;
     //private String refreshToken;
 }
