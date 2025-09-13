@@ -10,12 +10,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PaletDTO {
+    private String sscc;
     private String ean;
     private String batchNumber; //lote
     private String expirationDate;
     private String productionDate;
     private String time;
-    private String sscc;
+    private String shift;
 
     // Static info
     private int weight;

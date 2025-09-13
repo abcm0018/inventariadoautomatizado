@@ -81,7 +81,7 @@ public class ProductController {
     @GetMapping(value = "")
     public StandardResponse<List<ProductResponseDTO>> getAllProducts() {
         List<ProductResponseDTO> response = productService.getAllProducts();
-        log.info("List all product: {} pallets found", response.size());
+        log.info("List all pallets: {} found", response.size());
         return ResponseBuilder.with(HttpStatus.OK, true, "Successful response", response);
     }
 

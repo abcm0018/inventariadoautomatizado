@@ -1,6 +1,7 @@
 package com.abcm0018.inventarioautomatizado.palets.domain.entity;
 
 import com.abcm0018.inventarioautomatizado.productos.domain.entity.Product;
+import com.abcm0018.inventarioautomatizado.users.domain.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,4 +45,8 @@ public class Palet {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", referencedColumnName = "id")
     private Product product;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
 }

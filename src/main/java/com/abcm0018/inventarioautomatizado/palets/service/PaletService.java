@@ -2,6 +2,7 @@ package com.abcm0018.inventarioautomatizado.palets.service;
 
 import com.abcm0018.inventarioautomatizado.palets.dtos.PaletDTO;
 import com.abcm0018.inventarioautomatizado.palets.dtos.PaletRequest;
+import com.abcm0018.inventarioautomatizado.productos.dtos.ProductResponseDTO;
 
 import java.util.List;
 
@@ -13,4 +14,5 @@ public interface PaletService {
     PaletDTO getPaletsBySSCC(String sscc);
     List<PaletDTO> getPaletsByBatchNumber(String batchNumber);
     List<PaletDTO> getPaletsByShift(String shift);
+    List<PaletDTO> findByFilters(String ean, String batchNumber, String productionDate, String expirationDate, String time, String shift);
 }

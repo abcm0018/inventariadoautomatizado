@@ -36,8 +36,8 @@ public class ProductMapper {
                 .build();
     }
 
-    public static List<ProductResponseDTO> toDTOList(List<Product> cookieStatisticsList) {
-        return cookieStatisticsList.stream().map(ProductMapper::toDTO).toList();
+    public static List<ProductResponseDTO> toDTOList(List<Product> productList) {
+        return productList.stream().map(ProductMapper::toDTO).toList();
     }
 
     private static String dateToString(LocalDate date){

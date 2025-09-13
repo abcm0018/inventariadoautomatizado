@@ -30,6 +30,7 @@ public class PaletDTOMapper {
                         ? palet.getExpirationDate().format(DATE_FORMATTER) : null)
                 .time(palet != null ? palet.getTime() : null)
                 .sscc(palet != null ? palet.getSscc() : null)
+                .shift(palet != null ? palet.getShift() : null)
 
                 // Datos de StaticPaletInfo
                 .weight(staticInfo != null && staticInfo.getWeight() != null

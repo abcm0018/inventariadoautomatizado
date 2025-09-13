@@ -132,4 +132,17 @@ public class PaletsController {
         return ResponseBuilder.with(HttpStatus.OK, true, "Successful response", response);
     }
 
+    @GetMapping(value = "/filter")
+    public StandardResponse<List<PaletDTO>> getProductByFilter(
+            @RequestParam(required = false) String ean,
+            @RequestParam(required = false) String batchNumber,
+            @RequestParam(required = false) String productionDate,
+            @RequestParam(required = false) String expirationDate,
+            @RequestParam(required = false) String time,
+            @RequestParam(required = false) String shift) {
+        List<PaletDTO> response = paletService.findByFilters(ean, batchNumber, productionDate, expirationDate, time, shift);
+        log.info("List palets with filters -> ean: {}, batchNumber: {}, productionDate: {}, expirationDate:{}, time: {}, shift: {}", ean, batchNumber, productionDate, expirationDate, time, shift);
+        return ResponseBuilder.with(HttpStatus.OK, true, "Successful response", response);
+    }
+
 }

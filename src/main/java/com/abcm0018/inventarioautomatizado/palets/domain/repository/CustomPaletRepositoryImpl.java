@@ -1,0 +1,80 @@
+package com.abcm0018.inventarioautomatizado.palets.domain.repository;
+
+import com.abcm0018.inventarioautomatizado.palets.domain.entity.Palet;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Repository;
+
+import java.sql.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
+@Repository
+@Slf4j
+public class CustomPaletRepositoryImpl implements CustomPaletRepository {
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Override
+    public List<Palet> findPalets(String ean, String batchNumber, String productionDate, String expirationDate, String time, String shift) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Palet> cbQuery = cb.createQuery(Palet.class);
+
+        Root<Palet> root = cbQuery.from(Palet.class);
+
+        // Crear la lista de predicados (condiciones dinámicas)
+        List<Predicate> predicates = new ArrayList<>();
+
+        // Filtros dinámicos según los parámetros
+
+        if (StringUtils.isNotEmpty(ean)) {
+            predicates.add(cb.like(cb.upper(root.get("ean")), "%" + ean.toUpperCase() + "%"));
+        }
+
+        if (StringUtils.isNotEmpty(batchNumber)) {
+            predicates.add(cb.like(cb.upper(root.get("batchNumber")), "%" + batchNumber.toUpperCase() + "%"));
+        }
+
+        if (StringUtils.isNotEmpty(shift)) {
+            predicates.add(cb.like(cb.upper(root.get("shift")), "%" + shift.toUpperCase() + "%"));
+        }
+
+        if (StringUtils.isNotEmpty(time)) {
+            predicates.add(cb.like(cb.upper(root.get("time")), "%" + time.toUpperCase() + "%"));
+        }
+
+        if (StringUtils.isNotEmpty(productionDate) && StringUtils.isEmpty(expirationDate)) {
+            LocalDate date = Date.valueOf(productionDate).toLocalDate();
+            predicates.add(cb.equal(root.get("productionDate"), date));
+
+        }
+
+        if (StringUtils.isEmpty(productionDate) && StringUtils.isNotEmpty(expirationDate)) {
+            LocalDate date = Date.valueOf(expirationDate).toLocalDate();
+            predicates.add(cb.equal(root.get("expirationDate"), date));
+
+        }
+
+        if (StringUtils.isNotEmpty(productionDate) && StringUtils.isNotEmpty(productionDate)) {
+            LocalDate initDate = Date.valueOf(productionDate).toLocalDate();
+            LocalDate endDate = Date.valueOf(productionDate).toLocalDate();
+            predicates.add(cb.between(root.get("date"), initDate, endDate));
+        }
+
+        cbQuery.where(cb.and(predicates.toArray(new Predicate[0])));
+
+        TypedQuery<Palet> query = entityManager.createQuery(cbQuery);
+        return query.getResultList();
+    }
+}

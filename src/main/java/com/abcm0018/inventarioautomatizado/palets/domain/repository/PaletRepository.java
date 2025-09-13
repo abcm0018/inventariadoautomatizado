@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-public interface PaletRepository extends JpaRepository<Palet, Long> {
+public interface PaletRepository extends JpaRepository<Palet, Long>, CustomPaletRepository {
     List<Palet> findAllByEan(String ean);
     Optional<Palet> findByEan(String ean);
     Optional<Palet> findBySscc(String sscc);
