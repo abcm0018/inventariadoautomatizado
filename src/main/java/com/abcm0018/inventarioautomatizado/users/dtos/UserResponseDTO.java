@@ -5,16 +5,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserResponse {
-    private String username;
+public class UserResponseDTO {
+    private String employeeNumber;
     private String name;
     private String surname;
     private String email;
+    private String jobPosition;
     private String role;
 }

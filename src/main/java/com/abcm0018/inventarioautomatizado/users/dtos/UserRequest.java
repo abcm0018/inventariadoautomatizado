@@ -13,14 +13,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class UserRequest {
-    @NotBlank(message = "Username cannot be null or empty")
+    @NotBlank(message = "Employee number cannot be null or empty")
     @Pattern(
             regexp = "^[a-zA-Z][a-zA-Z0-9_]{2,19}$",
-            message = "Username must start with a letter, contain only letters, numbers or underscores, and be 3-20 characters long"
+            message = "Employee number must start with a letter, contain only letters, numbers or underscores, and be 3-20 characters long"
     )
-    private String username;
+    private String employeeNumber;
     @NotBlank(message = "Name cannot be null or empty")
     private String name;
     @NotBlank(message = "Surname cannot be null or empty")
     private String surname;
+    @Email(message = "Email cannot be null or empty")
+    private String email;
+    @NotBlank(message = "Employee position cannot be null or empty")
+    private String employeePosition;
 }
