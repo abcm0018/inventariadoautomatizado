@@ -27,10 +27,10 @@ public class Palet {
     private String ean;
     @Column(name = "batch_number", nullable = false)
     private String batchNumber; //lote
-    @Column(name = "production_date", nullable = false)
-    private LocalDate productionDate;
-    @Column(name = "expiration_date", nullable = false)
-    private LocalDate expirationDate;
+    @Column(name = "packaging_date", nullable = false)
+    private LocalDate packagingDate;
+    @Column(name = "product_use_by_date", nullable = false)
+    private LocalDate productUseByDate;
     @Column(name = "time", nullable = false)
     private String time;
     @Column(name = "sscc", nullable = false, length = 18, unique = true)

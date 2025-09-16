@@ -26,8 +26,8 @@ public class ApplicationConfig {
     @Bean
     public DaoAuthenticationProvider authProvider(UserDetailsService userDetailsService,
                                                   PasswordEncoder passwordEncoder) {
-        // Usa el constructor que toma el UserDetailsService
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
@@ -38,7 +38,7 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public UserDetailsService userDetailService() {
+    public UserDetailsService userDetailsService() {
         return employeeNumber -> userRepository.findByEmployeeNumber(employeeNumber)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }

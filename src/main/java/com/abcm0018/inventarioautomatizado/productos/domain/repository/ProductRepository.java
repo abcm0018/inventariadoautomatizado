@@ -11,7 +11,4 @@ import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long>, CustomProductRepository {
     Optional<Product> findByEan(String ean);
-    Optional<List<Product>> findByBrand(String brand);
-    Optional<List<Product>> findByManufacturedInEquals(String manufacturedIn);
-    Optional<List<Product>> findByExpirationDay(LocalDate expirationDay);
 }

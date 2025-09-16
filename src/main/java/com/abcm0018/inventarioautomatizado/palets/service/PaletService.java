@@ -14,5 +14,5 @@ public interface PaletService {
     PaletDTO getPaletsBySSCC(String sscc);
     List<PaletDTO> getPaletsByBatchNumber(String batchNumber);
     List<PaletDTO> getPaletsByShift(String shift);
-    List<PaletDTO> findByFilters(String ean, String batchNumber, String productionDate, String expirationDate, String time, String shift);
+    List<PaletDTO> findByFilters(String ean, String batchNumber, String packagingDate, String productUseByDate, String time, String shift);
 }

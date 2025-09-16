@@ -12,8 +12,8 @@ import lombok.NoArgsConstructor;
 public class PaletRequest {
     private String ean;
     private String batchNumber;   // lote
-    private String productionDate;
-    private String expirationDate;
+    private String packagingDate;
+    private String productUseByDate;
     private String time;
     private String sscc;
     private String shift;

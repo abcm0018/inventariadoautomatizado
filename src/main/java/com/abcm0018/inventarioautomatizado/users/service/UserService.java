@@ -9,5 +9,6 @@ public interface UserService {
     UserResponseDTO updateUser(String employeeNumber, UserRequest userRequest);
     void deleteUser(String employeeNumber);
     UserResponseDTO getUser(String employeeNumber);
+    List<UserResponseDTO> getUsersByRole(String role);
     List<UserResponseDTO> getAllUsers();
 }

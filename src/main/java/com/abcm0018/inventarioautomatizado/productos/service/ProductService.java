@@ -10,6 +10,5 @@ public interface ProductService {
     void deleteProduct(String ean);
     ProductResponseDTO updateProduct(String ean, ProductRequest product);
     List<ProductResponseDTO> getAllProducts();
-    List<ProductResponseDTO> findByFilters(String ean, String brand,
-                                           String initExpirationDate, String endExpirationDate, String expirationDate, String manufacturedIn);
+    List<ProductResponseDTO> findByFilters(String ean, String name, String brand, String manufacturedIn);
 }

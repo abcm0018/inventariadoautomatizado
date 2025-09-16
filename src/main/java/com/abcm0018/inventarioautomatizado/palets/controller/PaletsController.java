@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,6 +40,7 @@ public class PaletsController {
 //                    @Schema(implementation = HttpErrorResponse.class))})
     })
     @PutMapping(value = "/{sscc}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<PaletDTO> updatePalet(@PathVariable String sscc, @RequestBody PaletRequest request){
         PaletDTO response = paletService.updatePalet(sscc, request);
         log.info("Updated palet with SSCC: {}", sscc);
@@ -57,6 +59,7 @@ public class PaletsController {
 //                    @Schema(implementation = HttpErrorResponse.class))})
 //    })
     @DeleteMapping(value = "/{sscc}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<Void> deletePalet(@PathVariable String sscc) {
         paletService.deletePalet(sscc);
         log.info("Deleted palet with SSCC: {}", sscc);
@@ -69,7 +72,9 @@ public class PaletsController {
             @ApiResponse(responseCode = "200", description = "List of pallets obtained", content = @Content(schema = @Schema(implementation = PaletDTO.class))),
             //@ApiResponse(responseCode = "500", description = "Error interno del servidor", content = @Content)
     })
+
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<List<PaletDTO>> getPalets() {
         List<PaletDTO> response = paletService.getAllPalets();
         log.info("List all palet: {} pallets found", response.size());
@@ -84,6 +89,7 @@ public class PaletsController {
             //@ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/ean/{ean}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<List<PaletDTO>> getPaletsByEAN(@PathVariable String ean) {
         List<PaletDTO> response = paletService.getPaletsByEAN(ean);
         log.info("List palet by EAN: {} -> {} pallets found", ean, response.size());
@@ -98,6 +104,7 @@ public class PaletsController {
             //@ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/sscc/{sscc}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<PaletDTO> getPaletsBySSCC(@PathVariable String sscc) {
         PaletDTO response = paletService.getPaletsBySSCC(sscc);
         log.info("Palet with SSCC : {} -> {}", sscc, response);
@@ -111,7 +118,8 @@ public class PaletsController {
             //@ApiResponse(responseCode = "400", description = "Petición inválida"),
             //@ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
-    @GetMapping("/batchNumber/{batchNumber}")
+    @GetMapping("/batch-number/{batchNumber}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<List<PaletDTO>> getPaletsByBatchNumber(@PathVariable String batchNumber) {
         List<PaletDTO> response = paletService.getPaletsByBatchNumber(batchNumber);
         log.info("List palet by batch number: {} -> {} pallets found", batchNumber, response.size());
@@ -126,6 +134,7 @@ public class PaletsController {
             //@ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/shift/{shift}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<List<PaletDTO>> getPaletsByShift(@PathVariable String shift) {
         List<PaletDTO> response = paletService.getPaletsByShift(shift);
         log.info("List palet by shift: {} -> {} pallets found", shift, response.size());
@@ -133,15 +142,16 @@ public class PaletsController {
     }
 
     @GetMapping(value = "/filter")
-    public StandardResponse<List<PaletDTO>> getProductByFilter(
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
+    public StandardResponse<List<PaletDTO>> getPaletsByFilter(
             @RequestParam(required = false) String ean,
             @RequestParam(required = false) String batchNumber,
-            @RequestParam(required = false) String productionDate,
-            @RequestParam(required = false) String expirationDate,
+            @RequestParam(required = false) String packagingDate,
+            @RequestParam(required = false) String productUseByDate,
             @RequestParam(required = false) String time,
             @RequestParam(required = false) String shift) {
-        List<PaletDTO> response = paletService.findByFilters(ean, batchNumber, productionDate, expirationDate, time, shift);
-        log.info("List palets with filters -> ean: {}, batchNumber: {}, productionDate: {}, expirationDate:{}, time: {}, shift: {}", ean, batchNumber, productionDate, expirationDate, time, shift);
+        List<PaletDTO> response = paletService.findByFilters(ean, batchNumber, packagingDate, productUseByDate, time, shift);
+        log.info("List palets with filters -> ean: {}, batchNumber: {}, packagingDate: {}, productUseByDate:{}, time: {}, shift: {}", ean, batchNumber, packagingDate, packagingDate, time, shift);
         return ResponseBuilder.with(HttpStatus.OK, true, "Successful response", response);
     }
 

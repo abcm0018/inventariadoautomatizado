@@ -27,7 +27,7 @@ import java.util.List;
 @CacheConfig(cacheNames = InventariadoCacheConfig.PRODUCT_INFO)
 public class UserServiceImpl implements UserService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     @Override
     @CacheEvict(allEntries = true)
@@ -78,9 +78,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public List<UserResponseDTO> getUsersByRole(String role) {
+        List<User> userList = userRepository.findByRole(role);
+        return UserMapper.toDTOList(userList);
+    }
+
+    @Override
     @CacheEvict(allEntries = true)
     public List<UserResponseDTO> getAllUsers() {
         List<User> userList = userRepository.findAll();
-        return  UserMapper.toDTOList(userList);
+        return UserMapper.toDTOList(userList);
     }
 }

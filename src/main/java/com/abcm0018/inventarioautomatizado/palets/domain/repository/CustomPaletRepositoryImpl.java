@@ -21,13 +21,12 @@ import java.util.List;
 @Repository
 @Slf4j
 public class CustomPaletRepositoryImpl implements CustomPaletRepository {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Override
-    public List<Palet> findPalets(String ean, String batchNumber, String productionDate, String expirationDate, String time, String shift) {
+    public List<Palet> findPalets(String ean, String batchNumber, String packagingDate, String productUseByDate, String time, String shift) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Palet> cbQuery = cb.createQuery(Palet.class);
 
@@ -54,21 +53,21 @@ public class CustomPaletRepositoryImpl implements CustomPaletRepository {
             predicates.add(cb.like(cb.upper(root.get("time")), "%" + time.toUpperCase() + "%"));
         }
 
-        if (StringUtils.isNotEmpty(productionDate) && StringUtils.isEmpty(expirationDate)) {
-            LocalDate date = Date.valueOf(productionDate).toLocalDate();
-            predicates.add(cb.equal(root.get("productionDate"), date));
+        if (StringUtils.isNotEmpty(packagingDate) && StringUtils.isEmpty(packagingDate)) {
+            LocalDate date = Date.valueOf(packagingDate).toLocalDate();
+            predicates.add(cb.equal(root.get("packagingDate"), date));
 
         }
 
-        if (StringUtils.isEmpty(productionDate) && StringUtils.isNotEmpty(expirationDate)) {
-            LocalDate date = Date.valueOf(expirationDate).toLocalDate();
+        if (StringUtils.isEmpty(packagingDate) && StringUtils.isNotEmpty(productUseByDate)) {
+            LocalDate date = Date.valueOf(productUseByDate).toLocalDate();
             predicates.add(cb.equal(root.get("expirationDate"), date));
 
         }
 
-        if (StringUtils.isNotEmpty(productionDate) && StringUtils.isNotEmpty(productionDate)) {
-            LocalDate initDate = Date.valueOf(productionDate).toLocalDate();
-            LocalDate endDate = Date.valueOf(productionDate).toLocalDate();
+        if (StringUtils.isNotEmpty(packagingDate) && StringUtils.isNotEmpty(productUseByDate)) {
+            LocalDate initDate = Date.valueOf(packagingDate).toLocalDate();
+            LocalDate endDate = Date.valueOf(productUseByDate).toLocalDate();
             predicates.add(cb.between(root.get("date"), initDate, endDate));
         }
 

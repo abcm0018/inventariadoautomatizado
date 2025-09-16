@@ -20,7 +20,7 @@ public class UserMapper {
                 .surname(user.getSurname())
                 .email(user.getEmail())
                 .jobPosition(user.getJobPosition())
-                .role(user.getRole().name().toLowerCase())
+                .role(user.getRole().name().toUpperCase())
                 .build();
     }
 
@@ -31,7 +31,7 @@ public class UserMapper {
                 .name(dto.getName())
                 .surname(dto.getSurname())
                 .email(dto.getEmail())
-                .jobPosition(dto.getEmployeePosition())
+                .jobPosition(dto.getJobPosition())
                 .build();
     }
 

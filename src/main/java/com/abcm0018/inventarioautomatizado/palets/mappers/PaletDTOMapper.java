@@ -24,10 +24,10 @@ public class PaletDTOMapper {
                 // Datos de Palet
                 .ean(palet != null ? palet.getEan() : null)
                 .batchNumber(palet != null ? palet.getBatchNumber() : null)
-                .productionDate(palet != null && palet.getProductionDate() != null
-                        ? palet.getProductionDate().format(DATE_FORMATTER) : null)
-                .expirationDate(palet != null && palet.getExpirationDate() != null
-                        ? palet.getExpirationDate().format(DATE_FORMATTER) : null)
+                .packagingDate(palet != null && palet.getPackagingDate() != null
+                        ? palet.getPackagingDate().format(DATE_FORMATTER) : null)
+                .productUseByDate(palet != null && palet.getProductUseByDate() != null
+                        ? palet.getProductUseByDate().format(DATE_FORMATTER) : null)
                 .time(palet != null ? palet.getTime() : null)
                 .sscc(palet != null ? palet.getSscc() : null)
                 .shift(palet != null ? palet.getShift() : null)

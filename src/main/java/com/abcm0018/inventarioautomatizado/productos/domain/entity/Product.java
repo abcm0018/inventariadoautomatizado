@@ -29,8 +29,6 @@ public class Product {
     private String brand;
     @Column(name = "description")
     private String description;
-    @Column(name = "expiration_day", nullable = false)
-    private LocalDate expirationDay;
     @Column(name = "manufactured_in", nullable = false)
     private String manufacturedIn;
     @Column(name = "created_at", nullable = false)

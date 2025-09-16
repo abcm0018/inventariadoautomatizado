@@ -13,8 +13,8 @@ public class PaletDTO {
     private String sscc;
     private String ean;
     private String batchNumber; //lote
-    private String expirationDate;
-    private String productionDate;
+    private String productUseByDate; //Fecha de consumo preferente
+    private String packagingDate;
     private String time;
     private String shift;
 

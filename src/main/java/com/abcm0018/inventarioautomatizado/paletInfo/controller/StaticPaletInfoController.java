@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,6 +31,7 @@ public class StaticPaletInfoController {
     @CrossOrigin
     @Operation(summary = "This method is used to created a static palet info")
     @PostMapping(value = "")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<StaticPaletInfoDTO> addProduct(StaticPaletInfoRequest data){
         StaticPaletInfoDTO response = staticPaletInfoService.addInfo(data);
         log.info("Created info: {}", data.getSscc());
@@ -48,6 +50,7 @@ public class StaticPaletInfoController {
 //                    @Schema(implementation = HttpErrorResponse.class))})
     })
     @PutMapping(value = "/{sscc}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<StaticPaletInfoDTO> updateStaticPaletInfo(@PathVariable String sscc, @RequestBody StaticPaletInfoRequest data){
         StaticPaletInfoDTO response = staticPaletInfoService.updateInfo(sscc, data);
         log.info("Updated static palet info with sscc: {}", sscc);
@@ -66,6 +69,7 @@ public class StaticPaletInfoController {
 //                    @Schema(implementation = HttpErrorResponse.class))})
 //    })
     @DeleteMapping(value = "/{sscc}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<Void> deleteStaticPaletInfo(@PathVariable String sscc) {
         staticPaletInfoService.deleteStaticPaletInfo(sscc);
         log.info("Deleted static palet info with sscc: {}", sscc);
@@ -81,6 +85,7 @@ public class StaticPaletInfoController {
     })
 
     @GetMapping(value = "")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<List<StaticPaletInfoDTO>> getAllProducts() {
         List<StaticPaletInfoDTO> response = staticPaletInfoService.getAllInfo();
         log.info("List all static palet info: {} pallets found", response.size());
@@ -90,6 +95,7 @@ public class StaticPaletInfoController {
     @CrossOrigin
     @Operation(summary = "This method is used to display a specific static palet info")
     @GetMapping("/{sscc}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<StaticPaletInfoDTO> getStaticPaletInfo(@PathVariable String sscc) {
         StaticPaletInfoDTO response = staticPaletInfoService.getInfo(sscc);
         log.info("Get static palet info with SSCC: {}", sscc);

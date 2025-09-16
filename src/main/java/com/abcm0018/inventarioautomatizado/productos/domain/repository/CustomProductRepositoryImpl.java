@@ -26,7 +26,7 @@ public class CustomProductRepositoryImpl implements CustomProductRepository {
     private EntityManager entityManager;
 
     @Override
-    public List<Product> findProducts(String ean, String brand, String initExpirationDate, String endExpirationDate, String expirationDate, String manufacturedIn) {
+    public List<Product> findProducts(String ean, String brand, String name, String manufacturedIn) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Product> cbQuery = cb.createQuery(Product.class);
 
@@ -45,19 +45,12 @@ public class CustomProductRepositoryImpl implements CustomProductRepository {
             predicates.add(cb.like(cb.upper(root.get("brand")), "%" + brand.toUpperCase() + "%"));
         }
 
+        if (StringUtils.isNotEmpty(name)) {
+            predicates.add(cb.like(cb.upper(root.get("name")), "%" + name.toUpperCase() + "%"));
+        }
+
         if (StringUtils.isNotEmpty(manufacturedIn)) {
             predicates.add(cb.like(cb.upper(root.get("manufacturedIn")), "%" + manufacturedIn.toUpperCase() + "%"));
-        }
-
-        if (StringUtils.isNotEmpty(initExpirationDate) && StringUtils.isNotEmpty(endExpirationDate)) {
-            LocalDate initDate = LocalDate.parse(initExpirationDate, FORMATTER);
-            LocalDate endDate = LocalDate.parse(endExpirationDate, FORMATTER);
-            predicates.add(cb.between(root.get("expirationDay"), initDate, endDate));
-        }
-
-        if (StringUtils.isNotEmpty(expirationDate)) {
-            LocalDate date = LocalDate.parse(expirationDate, FORMATTER);
-            predicates.add(cb.equal(root.get("expirationDay"), date));
         }
 
         cbQuery.where(cb.and(predicates.toArray(new Predicate[0])));

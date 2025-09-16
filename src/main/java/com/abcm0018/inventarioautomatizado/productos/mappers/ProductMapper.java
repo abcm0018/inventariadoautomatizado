@@ -31,7 +31,6 @@ public class ProductMapper {
                 .name(product.getName())
                 .brand(product.getBrand())
                 .description(product.getDescription())
-                .expirationDay(dateToString(product.getExpirationDay()))
                 .manufacturedIn(product.getManufacturedIn())
                 .build();
     }

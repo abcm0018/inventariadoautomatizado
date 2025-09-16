@@ -12,14 +12,9 @@ import com.abcm0018.inventarioautomatizado.palets.mappers.PaletDTOMapper;
 import com.abcm0018.inventarioautomatizado.palets.mappers.PaletMapper;
 import com.abcm0018.inventarioautomatizado.palets.service.PaletService;
 import com.abcm0018.inventarioautomatizado.productos.constants.CustomErrorCode;
-import com.abcm0018.inventarioautomatizado.productos.domain.entity.Product;
-import com.abcm0018.inventarioautomatizado.productos.dtos.ProductResponseDTO;
-import com.abcm0018.inventarioautomatizado.productos.exceptions.ProductServiceException;
-import com.abcm0018.inventarioautomatizado.productos.mappers.ProductMapper;
 import com.abcm0018.inventarioautomatizado.shared.config.InventariadoCacheConfig;
 import com.abcm0018.inventarioautomatizado.shared.utils.PaletUtils;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -27,12 +22,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Time;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional
@@ -75,8 +68,8 @@ public class PaletServiceImpl implements PaletService {
         Palet paledToUpdated = PaletMapper.toEntity(request);
         paledToUpdated.setId(existPalet.getId());
         paledToUpdated.setProduct(existPalet.getProduct());
-        paledToUpdated.setProductionDate(parseDate(request.getProductionDate()));
-        paledToUpdated.setExpirationDate(parseDate(request.getExpirationDate()));
+        paledToUpdated.setPackagingDate(parseDate(request.getPackagingDate()));
+        paledToUpdated.setProductUseByDate(parseDate(request.getProductUseByDate()));
         paledToUpdated.setCreatedAt(existPalet.getCreatedAt());
         paledToUpdated.setUpdatedAt(LocalDateTime.now());
 
@@ -94,7 +87,7 @@ public class PaletServiceImpl implements PaletService {
         return palets.stream()
                 .map(palet -> {
                     StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                            new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"Associated static pallet information not found: " + palet.getEan(), HttpStatus.BAD_REQUEST));
+                            new PaletsServiceException(CustomErrorCode.NOT_FOUND,"Associated static pallet information not found: " + palet.getEan(), HttpStatus.BAD_REQUEST));
                     return PaletDTOMapper.toDTO(palet, staticPaletInfo);
                 }).toList();
     }
@@ -111,7 +104,7 @@ public class PaletServiceImpl implements PaletService {
         return palets.stream()
                 .map(palet -> {
                     StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                            new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND, "The Pallet with EAN " + ean + " has no associated static information" + palet.getEan(), HttpStatus.BAD_REQUEST));
+                            new PaletsServiceException(CustomErrorCode.NOT_FOUND, "The Pallet with EAN " + ean + " has no associated static information" + palet.getEan(), HttpStatus.BAD_REQUEST));
                     return PaletDTOMapper.toDTO(palet, staticPaletInfo);
                 }).toList();
     }
@@ -127,7 +120,7 @@ public class PaletServiceImpl implements PaletService {
                 new PaletsServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + sscc + " doesn't exist", HttpStatus.BAD_REQUEST));
         //Datos estáticos
         StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + sscc + " has no associated static information", HttpStatus.BAD_REQUEST));
+                new PaletsServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + sscc + " has no associated static information", HttpStatus.BAD_REQUEST));
         //Crear un método para rellenar los campos estáticos del dto
         return PaletDTOMapper.toDTO(palet, staticPaletInfo);
     }
@@ -135,13 +128,16 @@ public class PaletServiceImpl implements PaletService {
     @Override
     @CacheEvict(allEntries = true)
     public List<PaletDTO> getPaletsByBatchNumber(String batchNumber) {
+        if (!PaletUtils.isBatchValid(batchNumber)) {
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "The batch number does not have a valid format.", HttpStatus.BAD_REQUEST);
+        }
         //Datos impresos
         List<Palet> palets = paletRepository.findByBatchNumber(batchNumber).orElseThrow(() ->
                 new PaletsServiceException(CustomErrorCode.NOT_FOUND,"Pallet not found: " + batchNumber, HttpStatus.BAD_REQUEST));
         return palets.stream()
                 .map(palet -> {
                     StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                        new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + palet.getSscc() + " has no associated static information", HttpStatus.BAD_REQUEST));
+                        new PaletsServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + palet.getSscc() + " has no associated static information", HttpStatus.BAD_REQUEST));
                     return PaletDTOMapper.toDTO(palet, staticPaletInfo);
                 }).toList();
     }
@@ -149,36 +145,39 @@ public class PaletServiceImpl implements PaletService {
     @Override
     @CacheEvict(allEntries = true)
     public List<PaletDTO> getPaletsByShift(String shift) {
+        if (!PaletUtils.isShiftValid(shift)) {
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "The shift does not have a valid format.", HttpStatus.BAD_REQUEST);
+        }
         List<Palet> palets = paletRepository.findByShift(shift).orElseThrow(() ->
                 new PaletsServiceException(CustomErrorCode.NOT_FOUND,"Pallet not found: " + shift, HttpStatus.BAD_REQUEST));
         return palets.stream()
                 .map(palet -> {
                     StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                            new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + palet.getSscc() + " has no associated static information", HttpStatus.BAD_REQUEST));
+                            new PaletsServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + palet.getSscc() + " has no associated static information", HttpStatus.BAD_REQUEST));
                     return PaletDTOMapper.toDTO(palet, staticPaletInfo);
                 }).toList();
     }
 
     @Override
-    @Cacheable(key = "{#root.methodName, #ean, #batchNumber, #time, #shift, #productionDate, #expirationDate}")
-    public List<PaletDTO> findByFilters(String ean, String batchNumber, String productionDate, String expirationDate, String time, String shift) {
-        validateInputFilter(ean, batchNumber, productionDate, expirationDate, time, shift);
+    @Cacheable(key = "{#root.methodName, #ean, #batchNumber, #time, #shift, #packagingDate, #productUseByDate}")
+    public List<PaletDTO> findByFilters(String ean, String batchNumber, String packagingDate, String productUseByDate, String time, String shift) {
+        validateInputFilter(ean, batchNumber, packagingDate, productUseByDate, time, shift);
 
-        final List<Palet> palets = paletRepository.findPalets(ean, batchNumber, productionDate, expirationDate, time, shift);
+        final List<Palet> palets = paletRepository.findPalets(ean, batchNumber, packagingDate, productUseByDate, time, shift);
         return palets.stream()
                 .map(palet -> {
                     StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                            new StaticPaletInfoServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + palet.getSscc() + " has no associated static information", HttpStatus.BAD_REQUEST));
+                            new PaletsServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + palet.getSscc() + " has no associated static information", HttpStatus.BAD_REQUEST));
                     return PaletDTOMapper.toDTO(palet, staticPaletInfo);
                 }).toList();
     }
 
-    private void validateInputFilter(String ean, String batchNumber, String productionDate, String expirationDate, String time, String shift) throws IllegalArgumentException {
+    private void validateInputFilter(String ean, String batchNumber, String packagingDate, String productUseByDate, String time, String shift) throws PaletsServiceException {
         // Regex para EAN-14 (14 dígitos numéricos)
         String eanRegex = "^[0-9]{14}$";
 
         // Regex para batch (números y letras)
-        String batchNumberRegex = "^[0-9]+[A-Z]$";
+        String batchNumberRegex = "^[0-9]{7}[A-Z]$";
 
         // Regex para fechas en formato dd/MM/yyyy (permite 01/01/2025, etc.)
         String dateRegex = "^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\\d{4}$";
@@ -191,27 +190,27 @@ public class PaletServiceImpl implements PaletService {
 
         // Validaciones
         if (ean != null && !ean.matches(eanRegex)) {
-            throw new IllegalArgumentException("Invalid EAN. Must contain 14 digits.");
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "Invalid EAN. Must contain 14 digits.", HttpStatus.BAD_REQUEST);
         }
 
         if (batchNumber != null && !batchNumber.matches(batchNumberRegex)) {
-            throw new IllegalArgumentException("Invalid batch number. Must contain number and one letter.");
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "Invalid batch number. Must contain number and one letter.", HttpStatus.BAD_REQUEST);
         }
 
-        if (productionDate != null && !productionDate.matches(dateRegex)) {
-            throw new IllegalArgumentException("Invalid start date. Expected format: dd/mm/yyyy.");
+        if (packagingDate != null && !packagingDate.matches(dateRegex)) {
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "Invalid start date. Expected format: dd/mm/yyyy.", HttpStatus.BAD_REQUEST);
         }
 
-        if (expirationDate != null && !expirationDate.matches(dateRegex)) {
-            throw new IllegalArgumentException("Invalid expiration date. Expected format: dd/mm/yyyy.");
+        if (productUseByDate != null && !productUseByDate.matches(dateRegex)) {
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "Invalid start date. Expected format: dd/mm/yyyy.", HttpStatus.BAD_REQUEST);
         }
 
         if (shift != null && !shift.matches(shiftRegex)) {
-            throw new IllegalArgumentException("Invalid shift. Must be MORNING, AFTERNOON or NIGHT");
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "Invalid shift. Must be MORNING, AFTERNOON or NIGHT", HttpStatus.BAD_REQUEST);
         }
 
         if (time != null && !time.matches(timeRegex)) {
-            throw new IllegalArgumentException("Invalid time format. Expected format: HH:MM");
+            throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "Invalid time format. Expected format: HH:MM", HttpStatus.BAD_REQUEST);
         }
     }
 

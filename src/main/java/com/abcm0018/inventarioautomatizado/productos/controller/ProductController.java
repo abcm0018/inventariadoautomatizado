@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,6 +29,7 @@ public class ProductController {
     @CrossOrigin
     @Operation(summary = "This method is used to created a product")
     @PostMapping(value = "")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<ProductResponseDTO> addProduct(ProductRequest data){
         ProductResponseDTO response = productService.addProduct(data);
         log.info("Created product: {}", data.getEan());
@@ -46,6 +48,7 @@ public class ProductController {
 //                    @Schema(implementation = HttpErrorResponse.class))})
     })
     @PutMapping(value = "/{ean}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<ProductResponseDTO> updateProduct(@PathVariable String ean, @RequestBody ProductRequest data){
         ProductResponseDTO response = productService.updateProduct(ean, data);
         log.info("Updated product with ean: {}", ean);
@@ -64,6 +67,7 @@ public class ProductController {
 //                    @Schema(implementation = HttpErrorResponse.class))})
 //    })
     @DeleteMapping(value = "/{ean}")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<Void> deleteProduct(@PathVariable String ean) {
         productService.deleteProduct(ean);
         log.info("Deleted product with ean: {}", ean);
@@ -79,6 +83,7 @@ public class ProductController {
     })
 
     @GetMapping(value = "")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<List<ProductResponseDTO>> getAllProducts() {
         List<ProductResponseDTO> response = productService.getAllProducts();
         log.info("List all pallets: {} found", response.size());
@@ -86,15 +91,14 @@ public class ProductController {
     }
 
     @GetMapping(value = "/filter")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<List<ProductResponseDTO>> getProductByFilter(
             @RequestParam(required = false) String ean,
             @RequestParam(required = false) String brand,
-            @RequestParam(required = false) String initDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String expirationDate,
+            @RequestParam(required = false) String name,
             @RequestParam(required = false) String manufacturedIn) {
-        List<ProductResponseDTO> response = productService.findByFilters(ean, brand, initDate, endDate, expirationDate, manufacturedIn);
-        log.info("List products with filters -> ean: {}, brand: {}, initExpirationDate: {}, endExpirationDate: {}, expirationDate:{}, manufacturedIn: {}", ean, brand, initDate, endDate, expirationDate, manufacturedIn);
+        List<ProductResponseDTO> response = productService.findByFilters(ean, brand, name, manufacturedIn);
+        log.info("List products with filters -> ean: {}, brand: {}, name: {}, manufacturedIn: {}", ean, brand, name, manufacturedIn);
         return ResponseBuilder.with(HttpStatus.OK, true, "Successful response", response);
     }
 

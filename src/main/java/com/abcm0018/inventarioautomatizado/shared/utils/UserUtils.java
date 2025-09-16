@@ -6,6 +6,6 @@ public class UserUtils {
     private UserUtils(){throw new IllegalStateException("Utility class");}
 
     public static boolean isEmployeeNumberValid(String employeeNumber) {
-        return employeeNumber != null && employeeNumber.matches(EMPLOYEE_NUMBER_REGEX);
+        return employeeNumber.matches(EMPLOYEE_NUMBER_REGEX);
     }
 }

@@ -47,10 +47,6 @@ public class ProductServiceImpl implements ProductService {
 
         Product product = ProductMapper.toEntity(productRequest);
 
-        if (StringUtils.isNotEmpty(productRequest.getExpirationDay())) {
-            product.setExpirationDay(parseDate(productRequest.getExpirationDay()));
-        }
-
         product.setCreatedAt(LocalDateTime.now());
         product.setUpdatedAt(null);
 
@@ -70,10 +66,6 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ProductServiceException(CustomErrorCode.NOT_FOUND,"Product not found: " + ean, HttpStatus.NOT_FOUND));
 
         Product productToUpdate = ProductMapper.toEntity(data);
-
-        if (StringUtils.isNotEmpty(data.getExpirationDay())) {
-            productToUpdate.setExpirationDay(parseDate(data.getExpirationDay()));
-        }
 
         productToUpdate.setId(product.getId());
         productToUpdate.setCreatedAt(product.getCreatedAt());
@@ -103,75 +95,36 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    @Cacheable(key = "{#root.methodName, #ean, #brand, #manufacturedIn, #initExpirationDate, #endExpirationDate}")
-    public List<ProductResponseDTO> findByFilters(String ean, String brand, String initExpirationDate, String endExpirationDate, String expirationDate, String manufacturedIn) {
+    @Cacheable(key = "{#root.methodName, #ean, #brand, #name, #manufacturedIn}")
+    public List<ProductResponseDTO> findByFilters(String ean, String brand, String name, String manufacturedIn) {
 
-        validateInputFilter(ean, brand, initExpirationDate, endExpirationDate, expirationDate, manufacturedIn);
-        if(StringUtils.isEmpty(initExpirationDate) && StringUtils.isNotEmpty(endExpirationDate)) {
-            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "Lower range error cannot be null: initExpirationDate", HttpStatus.BAD_REQUEST);
-        }
-
-        if(StringUtils.isNotEmpty(initExpirationDate) && StringUtils.isEmpty(endExpirationDate)) {
-            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "Upper range error cannot be null: endExpirationDate", HttpStatus.BAD_REQUEST);
-        }
-
-        final List<Product> products = productRepository.findProducts(ean, brand, initExpirationDate, endExpirationDate, expirationDate, manufacturedIn);
+        validateInputFilter(ean, brand, manufacturedIn);
+        final List<Product> products = productRepository.findProducts(ean, brand, name, manufacturedIn);
         return ProductMapper.toDTOList(products);
     }
 
-    private void validateInputFilter(String ean, String brand, String initExpirationDate,
-                                     String endExpirationDate, String expirationDate,
-                                     String manufacturedIn) throws IllegalArgumentException {
+    private void validateInputFilter(String ean, String brand, String manufacturedIn) throws ProductServiceException {
         // Regex para EAN-14 (14 dígitos numéricos)
         String eanRegex = "^[0-9]{14}$";
 
         // Regex para brand (letras, números, espacios y guiones)
         String brandRegex = "^[A-Za-z]{1,50}$";
 
-        // Regex para fechas en formato dd/MM/yyyy (permite 01/01/2025, etc.)
-        String dateRegex = "^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\\d{4}$";
-
         // Regex para manufacturedIn (ejemplo: dos letras mayúsculas, código país ISO)
         String countryRegex = "^[A-Z]{2}$";
 
         // Validaciones
         if (ean != null && !ean.matches(eanRegex)) {
-            throw new IllegalArgumentException("Invalid EAN. Must contain 14 digits.");
+            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "Invalid EAN. Must contain 14 digits.", HttpStatus.BAD_REQUEST);
         }
 
         if (brand != null && !brand.matches(brandRegex)) {
-            throw new IllegalArgumentException("Invalid brand name. Letters only.");
-        }
-
-        if (initExpirationDate != null && !initExpirationDate.matches(dateRegex)) {
-            throw new IllegalArgumentException("Invalid start date. Expected format: dd/mm/yyyy.");
-        }
-
-        if (endExpirationDate != null && !endExpirationDate.matches(dateRegex)) {
-            throw new IllegalArgumentException("Invalid end date. Expected format: dd/mm/yyyy.");
-        }
-
-        if (expirationDate != null && !expirationDate.matches(dateRegex)) {
-            throw new IllegalArgumentException("Invalid expiration date. Expected format: dd/mm/yyyy.");
+            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "Invalid brand name. Letters only.", HttpStatus.BAD_REQUEST);
         }
 
         if (manufacturedIn != null && !manufacturedIn.matches(countryRegex)) {
-            throw new IllegalArgumentException("Invalid country code. Must be ISO Alpha-2 (e.g. ES, FR, US).");
+            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST, "Invalid country code. Must be ISO Alpha-2 (e.g. ES, FR, US).", HttpStatus.BAD_REQUEST);
         }
     }
 
-
-    private LocalDate parseDate(String dateStr) {
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            return LocalDate.parse(dateStr, formatter);
-        } catch (Exception e) {
-            throw new ProductServiceException(
-                    CustomErrorCode.BAD_REQUEST,
-                    "The date must be in the format dd/MM/yyyy. Value received: " + dateStr,
-                    HttpStatus.BAD_REQUEST,
-                    e.getMessage()
-            );
-        }
-    }
 }
