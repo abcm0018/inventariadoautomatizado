@@ -32,7 +32,7 @@ public class StaticPaletInfoController {
     @Operation(summary = "This method is used to created a static palet info")
     @PostMapping(value = "")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
-    public StandardResponse<StaticPaletInfoDTO> addProduct(StaticPaletInfoRequest data){
+    public StandardResponse<StaticPaletInfoDTO> addStaticPaletInfo(StaticPaletInfoRequest data){
         StaticPaletInfoDTO response = staticPaletInfoService.addInfo(data);
         log.info("Created info: {}", data.getSscc());
         return ResponseBuilder.withUpdatedElements(HttpStatus.CREATED, true, 1, "Static palet info created successfully", response);
@@ -41,7 +41,7 @@ public class StaticPaletInfoController {
     @CrossOrigin
     @Operation(summary = "This method is used to updated a static palet info")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "OK", content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProductResponseDTO.class))}),
+            @ApiResponse(responseCode = "200", description = "OK", content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = StaticPaletInfoDTO.class))}),
 //            @ApiResponse(responseCode = "400", description = "Bad Request", content =
 //                    {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema =
 //                    @Schema(implementation = HttpErrorResponse.class))}),
@@ -79,7 +79,7 @@ public class StaticPaletInfoController {
     @CrossOrigin
     @Operation(summary = "This method is used to display the static palet info ")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "OK", content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProductResponseDTO.class))}),
+            @ApiResponse(responseCode = "200", description = "OK", content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = StaticPaletInfoDTO.class))}),
 //            @ApiResponse(responseCode = "400", description = "Bad Request", content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = HttpErrorResponse.class))}),
 //            @ApiResponse(responseCode = "500", description = "Internal server error", content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = HttpErrorResponse.class))})
     })

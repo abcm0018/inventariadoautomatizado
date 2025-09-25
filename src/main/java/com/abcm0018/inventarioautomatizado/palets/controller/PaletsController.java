@@ -31,7 +31,7 @@ public class PaletsController {
     @CrossOrigin
     @Operation(summary = "This method is used to updated a palet ")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "OK", content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ProductResponseDTO.class))}),
+            @ApiResponse(responseCode = "200", description = "OK", content = {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = PaletDTO.class))}),
 //            @ApiResponse(responseCode = "400", description = "Bad Request", content =
 //                    {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema =
 //                    @Schema(implementation = HttpErrorResponse.class))}),
@@ -40,7 +40,6 @@ public class PaletsController {
 //                    @Schema(implementation = HttpErrorResponse.class))})
     })
     @PutMapping(value = "/{sscc}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<PaletDTO> updatePalet(@PathVariable String sscc, @RequestBody PaletRequest request){
         PaletDTO response = paletService.updatePalet(sscc, request);
         log.info("Updated palet with SSCC: {}", sscc);
@@ -74,7 +73,6 @@ public class PaletsController {
     })
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<List<PaletDTO>> getPalets() {
         List<PaletDTO> response = paletService.getAllPalets();
         log.info("List all palet: {} pallets found", response.size());
@@ -89,7 +87,6 @@ public class PaletsController {
             //@ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/ean/{ean}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<List<PaletDTO>> getPaletsByEAN(@PathVariable String ean) {
         List<PaletDTO> response = paletService.getPaletsByEAN(ean);
         log.info("List palet by EAN: {} -> {} pallets found", ean, response.size());
@@ -104,7 +101,6 @@ public class PaletsController {
             //@ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/sscc/{sscc}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<PaletDTO> getPaletsBySSCC(@PathVariable String sscc) {
         PaletDTO response = paletService.getPaletsBySSCC(sscc);
         log.info("Palet with SSCC : {} -> {}", sscc, response);
@@ -119,7 +115,6 @@ public class PaletsController {
             //@ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/batch-number/{batchNumber}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<List<PaletDTO>> getPaletsByBatchNumber(@PathVariable String batchNumber) {
         List<PaletDTO> response = paletService.getPaletsByBatchNumber(batchNumber);
         log.info("List palet by batch number: {} -> {} pallets found", batchNumber, response.size());
@@ -134,7 +129,6 @@ public class PaletsController {
             //@ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("/shift/{shift}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<List<PaletDTO>> getPaletsByShift(@PathVariable String shift) {
         List<PaletDTO> response = paletService.getPaletsByShift(shift);
         log.info("List palet by shift: {} -> {} pallets found", shift, response.size());
@@ -142,7 +136,6 @@ public class PaletsController {
     }
 
     @GetMapping(value = "/filter")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<List<PaletDTO>> getPaletsByFilter(
             @RequestParam(required = false) String ean,
             @RequestParam(required = false) String batchNumber,

@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class UserRequest {
     @NotBlank(message = "Employee number cannot be null or empty")
     @Pattern(
-            regexp = "^[a-zA-Z][a-zA-Z0-9_]{2,19}$",
+            regexp = "^[0-9]{8}[A-Z]$",
             message = "Employee number must contain only numbers"
     )
     private String employeeNumber;
@@ -27,4 +27,8 @@ public class UserRequest {
     private String email;
     @NotBlank(message = "Job position cannot be null or empty")
     private String jobPosition;
+    private String role;
+    private Boolean active;
+    private Boolean blocked;
+    private Boolean expirated;
 }

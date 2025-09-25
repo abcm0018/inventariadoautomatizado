@@ -9,8 +9,8 @@ public interface CustomPaletRepository {
 
     List<Palet> findPalets(@Param("ean") String ean,
                            @Param("batchNumber") String batchNumber,
-                           @Param("productionDate") String packagingDate,
-                           @Param("expirationDate") String productUseByDate,
-                           @Param("time") String time,
+                           @Param("packagingDate") String packagingDate,
+                           @Param("productUseByDate") String productUseByDate,
+                           @Param("productionTime") String productionTime,
                            @Param("shift") String shift);
 }

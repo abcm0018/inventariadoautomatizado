@@ -1,9 +1,12 @@
 package com.abcm0018.inventarioautomatizado.users.dtos;
 
+import com.abcm0018.inventarioautomatizado.timesheet.dtos.TimesheetResponseDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor

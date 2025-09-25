@@ -1,5 +1,7 @@
 package com.abcm0018.inventarioautomatizado.users.domain.entity;
 
+import com.abcm0018.inventarioautomatizado.workshift.domain.entity.Shift;
+import com.abcm0018.inventarioautomatizado.timesheet.domain.entity.Timesheet;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,6 +12,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -36,10 +40,28 @@ public class User implements UserDetails, Serializable {
     private String password;
     @Column(name = "job_position", nullable = false)
     private String jobPosition;
+    @Column(name = "active", nullable = false)
+    private boolean active;
+    @Column(name = "blocked", nullable = false)
+    private boolean blocked;
+    @Column(name = "expirated", nullable = false)
+    private boolean expirated;
+    @Column(name = "registration_date", nullable = false)
+    private LocalDate registrationDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private Role role;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Shift> shifts = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Timesheet> timesheets = new ArrayList<>();
+
+    private String getFullName (){
+        return name + " " + surname;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities(){
@@ -53,12 +75,12 @@ public class User implements UserDetails, Serializable {
 
     @Override
     public boolean isAccountNonExpired(){
-        return true;
+        return !isExpirated();
     }
 
     @Override
     public boolean isAccountNonLocked(){
-        return true;
+        return !isBlocked();
     }
 
     @Override
@@ -68,6 +90,6 @@ public class User implements UserDetails, Serializable {
 
     @Override
     public boolean isEnabled(){
-        return true;
+        return isActive();
     }
 }

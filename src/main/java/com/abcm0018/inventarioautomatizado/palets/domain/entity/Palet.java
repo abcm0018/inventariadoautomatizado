@@ -31,8 +31,8 @@ public class Palet {
     private LocalDate packagingDate;
     @Column(name = "product_use_by_date", nullable = false)
     private LocalDate productUseByDate;
-    @Column(name = "time", nullable = false)
-    private String time;
+    @Column(name = "production_time", nullable = false)
+    private String productionTime;
     @Column(name = "sscc", nullable = false, length = 18, unique = true)
     private String sscc;
     @Column(name = "shift", nullable = false)
@@ -47,6 +47,6 @@ public class Palet {
     private Product product;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "employee_number", referencedColumnName = "employee_number")
     private User user;
 }

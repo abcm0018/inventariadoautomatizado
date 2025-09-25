@@ -1,7 +1,6 @@
 package com.abcm0018.inventarioautomatizado.users.mapper;
 
-import com.abcm0018.inventarioautomatizado.productos.domain.entity.Product;
-import com.abcm0018.inventarioautomatizado.productos.mappers.ProductMapper;
+import com.abcm0018.inventarioautomatizado.users.domain.entity.Role;
 import com.abcm0018.inventarioautomatizado.users.domain.entity.User;
 import com.abcm0018.inventarioautomatizado.users.dtos.UserRequest;
 import com.abcm0018.inventarioautomatizado.users.dtos.UserResponseDTO;

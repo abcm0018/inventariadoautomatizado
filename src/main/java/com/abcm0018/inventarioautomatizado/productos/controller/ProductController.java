@@ -29,7 +29,6 @@ public class ProductController {
     @CrossOrigin
     @Operation(summary = "This method is used to created a product")
     @PostMapping(value = "")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<ProductResponseDTO> addProduct(ProductRequest data){
         ProductResponseDTO response = productService.addProduct(data);
         log.info("Created product: {}", data.getEan());
@@ -48,7 +47,6 @@ public class ProductController {
 //                    @Schema(implementation = HttpErrorResponse.class))})
     })
     @PutMapping(value = "/{ean}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<ProductResponseDTO> updateProduct(@PathVariable String ean, @RequestBody ProductRequest data){
         ProductResponseDTO response = productService.updateProduct(ean, data);
         log.info("Updated product with ean: {}", ean);
@@ -83,7 +81,6 @@ public class ProductController {
     })
 
     @GetMapping(value = "")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<List<ProductResponseDTO>> getAllProducts() {
         List<ProductResponseDTO> response = productService.getAllProducts();
         log.info("List all pallets: {} found", response.size());
@@ -91,7 +88,6 @@ public class ProductController {
     }
 
     @GetMapping(value = "/filter")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
     public StandardResponse<List<ProductResponseDTO>> getProductByFilter(
             @RequestParam(required = false) String ean,
             @RequestParam(required = false) String brand,

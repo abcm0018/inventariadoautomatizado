@@ -6,10 +6,7 @@ import com.abcm0018.inventarioautomatizado.auth.dtos.LoginRequest;
 import com.abcm0018.inventarioautomatizado.auth.dtos.PasswordResetRequest;
 import com.abcm0018.inventarioautomatizado.auth.dtos.RegisterUserRequest;
 import com.abcm0018.inventarioautomatizado.auth.exceptions.AuthServiceException;
-import com.abcm0018.inventarioautomatizado.auth.service.AuthService;
-import com.abcm0018.inventarioautomatizado.auth.service.EmailService;
-import com.abcm0018.inventarioautomatizado.auth.service.JWTService;
-import com.abcm0018.inventarioautomatizado.auth.service.TokenBlackList;
+import com.abcm0018.inventarioautomatizado.auth.service.*;
 import com.abcm0018.inventarioautomatizado.productos.constants.CustomErrorCode;
 import com.abcm0018.inventarioautomatizado.shared.config.InventariadoCacheConfig;
 import com.abcm0018.inventarioautomatizado.users.domain.entity.Role;
@@ -33,6 +30,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -47,13 +46,16 @@ public class AuthServiceImpl implements AuthService {
     private final TokenBlackList tokenBlackList;
     private final EmailService emailService;
 
+    private static final Integer TOTAL_USERS = 1;
+    private final EmailTemplateService emailTemplateService;
+
     @Override
     @CacheEvict(allEntries = true)
     public Integer addUser(RegisterUserRequest request) {
         if(employeeNumberExists(request.getEmployeeNumber())){
-            throw new AuthServiceException(CustomErrorCode.BAD_REQUEST,
-                    "There is already a operator user with the employee number: " + request.getEmployeeNumber(),
-                    HttpStatus.BAD_REQUEST);
+            throw new AuthServiceException(CustomErrorCode.CONFLICT,
+                    "There is already a employee with the employee number: " + request.getEmployeeNumber(),
+                    HttpStatus.CONFLICT);
         }
 
         String password = KeyGenerators.string().generateKey();
@@ -65,20 +67,17 @@ public class AuthServiceImpl implements AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(password))
                 .jobPosition(request.getJobPosition())
+                .registrationDate(LocalDate.now())
+                .active(true)
                 .role(Role.valueOf(request.getRole()))
                 .build();
         try{
             userRepository.save(user);
-            // Enviar correo electronico al usuario con la contraseña (librería de email)
-            String subject = "Tu cuenta ha sido creada";
-            String body = String.format(
-                    "Hola %s %s,\n\nTu número de empleado es: %s\nTu contraseña temporal es: %s",
-                    user.getName(), user.getSurname(), user.getEmployeeNumber(), password
-            );
-            emailService.sendEmail(user.getEmail(), subject, body);
+            String subject = emailTemplateService.getSubject("CREACION_EMPLEADO");
+            String body = emailTemplateService.buildBody("CREACION_EMPLEADO", user.getName(), user.getSurname(), user.getEmployeeNumber(), password);
 
-            log.info("User password added: {}", password);
-            return 1;
+            emailService.sendEmail(user.getEmail(), subject, body);
+            return TOTAL_USERS;
         } catch (Exception e){
             throw new AuthServiceException(
                     CustomErrorCode.INTERNAL_SERVER_ERROR,

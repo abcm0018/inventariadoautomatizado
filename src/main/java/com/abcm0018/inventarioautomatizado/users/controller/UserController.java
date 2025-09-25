@@ -38,7 +38,7 @@ public class UserController {
 //                    @Schema(implementation = HttpErrorResponse.class))})
     })
     @PutMapping(value = "/{employeeNumber}")
-    @PreAuthorize("hasAuthority('ADMINISTRATOR')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public StandardResponse<UserResponseDTO> updateUser(@PathVariable String employeeNumber, @RequestBody UserRequest data){
         UserResponseDTO response = userService.updateUser(employeeNumber, data);
         log.info("Updated product with employeeNumber: {}", employeeNumber);
@@ -57,7 +57,7 @@ public class UserController {
 //                    @Schema(implementation = HttpErrorResponse.class))})
 //    })
     @DeleteMapping(value = "/{employeeNumber}")
-    @PreAuthorize("hasAuthority('ADMINISTRATOR')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public StandardResponse<Void> deleteUser(@PathVariable String employeeNumber) {
         userService.deleteUser(employeeNumber);
         log.info("Deleted product with employeeNumber: {}", employeeNumber);
@@ -91,7 +91,6 @@ public class UserController {
     @CrossOrigin
     @Operation(summary = "This method is used to display a specific user")
     @GetMapping(value = "/user/{employeeNumber}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR', 'OPERATOR')")
     public StandardResponse<UserResponseDTO> getUser(@PathVariable String employeeNumber) {
         UserResponseDTO response = userService.getUser(employeeNumber);
         log.info("User with employeeNumber: {}", employeeNumber);

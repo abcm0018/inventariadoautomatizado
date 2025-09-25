@@ -40,9 +40,9 @@ public class ProductServiceImpl implements ProductService {
         Optional<Product> existProduct = productRepository.findByEan(productRequest.getEan());
 
         if (existProduct.isPresent()) {
-            throw new ProductServiceException(CustomErrorCode.BAD_REQUEST,
+            throw new ProductServiceException(CustomErrorCode.CONFLICT,
                     "There is already a product with the EAN: " + productRequest.getEan(),
-                    HttpStatus.BAD_REQUEST);
+                    HttpStatus.CONFLICT);
         }
 
         Product product = ProductMapper.toEntity(productRequest);

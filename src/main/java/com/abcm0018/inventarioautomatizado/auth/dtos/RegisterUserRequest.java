@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 public class RegisterUserRequest {
     @NotBlank(message = "Employee number cannot be null or empty")
     @Pattern(
-            regexp = "^[a-zA-Z][a-zA-Z0-9_]{2,19}$",
+            regexp = "^[0-9]{8}[A-Z]$",
             message = "Employee number must start with a letter, contain only letters, numbers or underscores, and be 3-20 characters long"
     )
     private String employeeNumber;

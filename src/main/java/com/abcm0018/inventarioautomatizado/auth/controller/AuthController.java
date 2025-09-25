@@ -44,7 +44,7 @@ public class AuthController {
 //                    @Schema(implementation = HttpErrorResponse.class))})
     })
 
-    @PostMapping(value = "/auth/register")
+    @PostMapping(value = "/register")
     @PreAuthorize("hasAuthority('ADMIN')")
     public StandardResponse<Integer> registerUser(@RequestBody RegisterUserRequest data) {
         Integer result = authService.addUser(data);
@@ -65,7 +65,7 @@ public class AuthController {
 //                    {@Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema =
 //                    @Schema(implementation = HttpErrorResponse.class))})
     })
-    @PostMapping(value = "/auth/login")
+    @PostMapping(value = "/login")
     public StandardResponse<AuthResponseDTO> login(@RequestBody LoginRequest request) {
         AuthResponseDTO response = authService.loginUser(request);
         log.info("User with role {} and employee number {} has successfully logged in",
@@ -75,7 +75,7 @@ public class AuthController {
     }
 
     @CrossOrigin
-    @GetMapping(value="/auth/refreshToken")
+    @GetMapping(value="/refreshToken")
     public StandardResponse<AuthResponseDTO> renewToken(WebRequest request) {
         String userToken = JWTUtils.extractTokenFromRequest(request);
         AuthResponseDTO response  = authService.renewUserToken(userToken);
@@ -86,7 +86,7 @@ public class AuthController {
     }
 
     @CrossOrigin
-    @PutMapping(value = "/auth/resetPassword")
+    @PutMapping(value = "/resetPassword")
     public StandardResponse<UserResponseDTO> changePassword(@RequestBody PasswordResetRequest passResetInfo){
         UserResponseDTO response = authService.updatePassword(passResetInfo);
         log.info("User with an employee number {} has updated password",

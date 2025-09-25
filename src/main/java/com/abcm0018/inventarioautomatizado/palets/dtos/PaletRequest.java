@@ -14,7 +14,7 @@ public class PaletRequest {
     private String batchNumber;   // lote
     private String packagingDate;
     private String productUseByDate;
-    private String time;
+    private String productionTime;
     private String sscc;
     private String shift;
 }

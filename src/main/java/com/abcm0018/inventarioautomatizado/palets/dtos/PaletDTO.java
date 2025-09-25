@@ -15,7 +15,7 @@ public class PaletDTO {
     private String batchNumber; //lote
     private String productUseByDate; //Fecha de consumo preferente
     private String packagingDate;
-    private String time;
+    private String productionTime;
     private String shift;
 
     // Static info

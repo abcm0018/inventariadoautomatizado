@@ -28,7 +28,7 @@ public class PaletDTOMapper {
                         ? palet.getPackagingDate().format(DATE_FORMATTER) : null)
                 .productUseByDate(palet != null && palet.getProductUseByDate() != null
                         ? palet.getProductUseByDate().format(DATE_FORMATTER) : null)
-                .time(palet != null ? palet.getTime() : null)
+                .productionTime(palet != null ? palet.getProductionTime() : null)
                 .sscc(palet != null ? palet.getSscc() : null)
                 .shift(palet != null ? palet.getShift() : null)
 
