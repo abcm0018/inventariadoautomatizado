@@ -1,8 +1,5 @@
 package com.abcm0018.inventarioautomatizado.paletInfo.domain.entity;
 
-import com.abcm0018.inventarioautomatizado.palets.domain.entity.Palet;
-import com.abcm0018.inventarioautomatizado.palets.domain.entity.PaletStatus;
-import com.abcm0018.inventarioautomatizado.productos.domain.entity.Product;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -1,9 +1,9 @@
 package com.abcm0018.inventarioautomatizado.workshift.exceptions;
 
-import com.abcm0018.inventarioautomatizado.palets.exceptions.PaletsServiceException;
 import com.abcm0018.inventarioautomatizado.shared.response.ResponseBuilder;
 import com.abcm0018.inventarioautomatizado.shared.response.ResponseError;
 import com.abcm0018.inventarioautomatizado.shared.response.StandardResponse;
+import com.abcm0018.inventarioautomatizado.users.exceptions.UserServiceException;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @ControllerAdvice
 @Order(121)
 @Slf4j
-public class ShiftExceptionControllerAdvice {
+public class WorkshiftExceptionControllerAdvice {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<StandardResponse<Object>> handleException(Exception ex){
         log.error(ex.getMessage(), ex);
@@ -26,8 +26,8 @@ public class ShiftExceptionControllerAdvice {
         return new ResponseEntity<>(ResponseBuilder.withError(status, null, info), status);
     }
 
-    @ExceptionHandler(PaletsServiceException.class)
-    public ResponseEntity<StandardResponse<Object>> handleShiftException(ShiftServiceException ex){
+    @ExceptionHandler(UserServiceException.class)
+    public ResponseEntity<StandardResponse<Object>> handleUserException(UserServiceException ex){
         log.error(ex.getMessage(), ex);
         HttpStatus status = ex.getHttpStatus();
         String info = status.getReasonPhrase();

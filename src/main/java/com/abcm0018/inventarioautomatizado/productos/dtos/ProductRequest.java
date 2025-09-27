@@ -18,10 +18,6 @@ public class ProductRequest {
     private String brand;
     @NotBlank(message="Description cannot be null or empty")
     private String description;
-    @NotNull(message="Expiration Day cannot be null")
-    @Pattern(regexp = "^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\\d{4}$",
-            message = "Expiration Day must follow the format dd/MM/yyyy")
-    private String expirationDay;
     @NotBlank(message="Manufactured In cannot be null or empty")
     @Pattern(regexp = "^[A-Z]{2}$", message = "Manufactured In must be a valid ISO country code (2 uppercase letters)")
     private String manufacturedIn;

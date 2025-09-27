@@ -6,6 +6,6 @@ public class ShiftUtils {
     private ShiftUtils(){throw new IllegalStateException("Utility class");}
 
     public static boolean isShiftValid(String shift) {
-        return shift.matches(SHIFT_REGEX);
+        return shift.toUpperCase().matches(SHIFT_REGEX);
     }
 }

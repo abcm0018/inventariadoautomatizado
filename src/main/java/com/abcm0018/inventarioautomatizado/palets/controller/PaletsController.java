@@ -3,7 +3,6 @@ package com.abcm0018.inventarioautomatizado.palets.controller;
 import com.abcm0018.inventarioautomatizado.palets.dtos.PaletDTO;
 import com.abcm0018.inventarioautomatizado.palets.dtos.PaletRequest;
 import com.abcm0018.inventarioautomatizado.palets.service.PaletService;
-import com.abcm0018.inventarioautomatizado.productos.dtos.ProductResponseDTO;
 import com.abcm0018.inventarioautomatizado.shared.response.ResponseBuilder;
 import com.abcm0018.inventarioautomatizado.shared.response.StandardResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -144,7 +143,7 @@ public class PaletsController {
             @RequestParam(required = false) String time,
             @RequestParam(required = false) String shift) {
         List<PaletDTO> response = paletService.findByFilters(ean, batchNumber, packagingDate, productUseByDate, time, shift);
-        log.info("List palets with filters -> ean: {}, batchNumber: {}, packagingDate: {}, productUseByDate:{}, time: {}, shift: {}", ean, batchNumber, packagingDate, packagingDate, time, shift);
+                                                                                                                                                                     log.info("List palets with filters -> ean: {}, batchNumber: {}, packagingDate: {}, productUseByDate:{}, time: {}, shift: {}", ean, batchNumber, packagingDate, packagingDate, time, shift);
         return ResponseBuilder.with(HttpStatus.OK, true, "Successful response", response);
     }
 

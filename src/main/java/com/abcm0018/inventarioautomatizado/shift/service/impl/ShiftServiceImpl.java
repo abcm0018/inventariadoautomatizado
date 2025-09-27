@@ -1,19 +1,17 @@
-package com.abcm0018.inventarioautomatizado.workshift.service.impl;
+package com.abcm0018.inventarioautomatizado.shift.service.impl;
 
 import com.abcm0018.inventarioautomatizado.paletInfo.exceptions.StaticPaletInfoServiceException;
-import com.abcm0018.inventarioautomatizado.paletInfo.mapper.StaticPaletInfoMapper;
 import com.abcm0018.inventarioautomatizado.productos.constants.CustomErrorCode;
 import com.abcm0018.inventarioautomatizado.shared.config.InventariadoCacheConfig;
 import com.abcm0018.inventarioautomatizado.shared.utils.ShiftUtils;
-import com.abcm0018.inventarioautomatizado.timesheet.dtos.ShiftDTO;
-import com.abcm0018.inventarioautomatizado.timesheet.dtos.ShiftRequest;
-import com.abcm0018.inventarioautomatizado.users.domain.repository.UserRepository;
-import com.abcm0018.inventarioautomatizado.workshift.domain.entity.Shift;
-import com.abcm0018.inventarioautomatizado.workshift.domain.entity.ShiftType;
-import com.abcm0018.inventarioautomatizado.workshift.domain.repository.ShiftRepository;
-import com.abcm0018.inventarioautomatizado.workshift.exceptions.ShiftServiceException;
-import com.abcm0018.inventarioautomatizado.workshift.mapper.ShiftMapper;
-import com.abcm0018.inventarioautomatizado.workshift.service.ShiftService;
+import com.abcm0018.inventarioautomatizado.shift.dtos.ShiftDTO;
+import com.abcm0018.inventarioautomatizado.shift.dtos.ShiftRequest;
+import com.abcm0018.inventarioautomatizado.shift.domain.entity.Shift;
+import com.abcm0018.inventarioautomatizado.shift.domain.entity.ShiftType;
+import com.abcm0018.inventarioautomatizado.shift.domain.repository.ShiftRepository;
+import com.abcm0018.inventarioautomatizado.shift.exceptions.ShiftServiceException;
+import com.abcm0018.inventarioautomatizado.shift.mapper.ShiftMapper;
+import com.abcm0018.inventarioautomatizado.shift.service.ShiftService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.http.HttpStatus;
@@ -22,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 
 @Service
 @Transactional
@@ -31,8 +28,6 @@ import java.util.Random;
 public class ShiftServiceImpl implements ShiftService {
 
     private final ShiftRepository shiftRepository;
-    private final UserRepository userRepository;
-    private final Random random = new Random();
 
     @Override
     public ShiftDTO addShift(ShiftRequest shiftRequest) {

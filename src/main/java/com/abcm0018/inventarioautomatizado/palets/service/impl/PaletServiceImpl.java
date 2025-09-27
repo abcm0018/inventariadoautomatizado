@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -148,7 +147,7 @@ public class PaletServiceImpl implements PaletService {
         if (!PaletUtils.isShiftValid(shift)) {
             throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "The shift does not have a valid format.", HttpStatus.BAD_REQUEST);
         }
-        List<Palet> palets = paletRepository.findByShift(shift).orElseThrow(() ->
+        List<Palet> palets = paletRepository.findByShift(shift.toUpperCase()).orElseThrow(() ->
                 new PaletsServiceException(CustomErrorCode.NOT_FOUND,"Pallet not found: " + shift, HttpStatus.NOT_FOUND));
         return getPaletDTOS(palets);
     }
@@ -195,7 +194,7 @@ public class PaletServiceImpl implements PaletService {
             throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "Invalid start date. Expected format: dd/mm/yyyy.", HttpStatus.BAD_REQUEST);
         }
 
-        if (shift != null && !shift.matches(shiftRegex)) {
+        if (shift != null && !shift.toUpperCase().matches(shiftRegex)) {
             throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "Invalid shift. Must be MORNING, AFTERNOON or NIGHT", HttpStatus.BAD_REQUEST);
         }
 

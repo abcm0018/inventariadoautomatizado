@@ -1,14 +1,8 @@
 package com.abcm0018.inventarioautomatizado.users.service.impl;
 
 import com.abcm0018.inventarioautomatizado.productos.constants.CustomErrorCode;
-import com.abcm0018.inventarioautomatizado.productos.domain.entity.Product;
-import com.abcm0018.inventarioautomatizado.productos.mappers.ProductMapper;
 import com.abcm0018.inventarioautomatizado.shared.config.InventariadoCacheConfig;
 import com.abcm0018.inventarioautomatizado.shared.utils.UserUtils;
-import com.abcm0018.inventarioautomatizado.timesheet.domain.entity.Timesheet;
-import com.abcm0018.inventarioautomatizado.timesheet.domain.repository.TimesheetRepository;
-import com.abcm0018.inventarioautomatizado.timesheet.dtos.TimesheetResponseDTO;
-import com.abcm0018.inventarioautomatizado.timesheet.mapper.TimesheetMapper;
 import com.abcm0018.inventarioautomatizado.users.domain.entity.Role;
 import com.abcm0018.inventarioautomatizado.users.domain.entity.User;
 import com.abcm0018.inventarioautomatizado.users.domain.repository.UserRepository;
@@ -25,8 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -35,7 +27,6 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final TimesheetRepository timesheetRepository;
 
     @Override
     @CacheEvict(allEntries = true)

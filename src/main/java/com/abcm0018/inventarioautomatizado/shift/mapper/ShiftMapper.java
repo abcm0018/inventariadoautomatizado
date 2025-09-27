@@ -1,14 +1,9 @@
-package com.abcm0018.inventarioautomatizado.workshift.mapper;
+package com.abcm0018.inventarioautomatizado.shift.mapper;
 
-import com.abcm0018.inventarioautomatizado.timesheet.domain.entity.Timesheet;
-import com.abcm0018.inventarioautomatizado.timesheet.dtos.ShiftDTO;
-import com.abcm0018.inventarioautomatizado.timesheet.dtos.ShiftRequest;
-import com.abcm0018.inventarioautomatizado.timesheet.dtos.TimesheetRequest;
-import com.abcm0018.inventarioautomatizado.timesheet.dtos.TimesheetResponseDTO;
-import com.abcm0018.inventarioautomatizado.timesheet.mapper.TimesheetMapper;
-import com.abcm0018.inventarioautomatizado.users.domain.entity.User;
-import com.abcm0018.inventarioautomatizado.workshift.domain.entity.Shift;
-import com.abcm0018.inventarioautomatizado.workshift.domain.entity.ShiftType;
+import com.abcm0018.inventarioautomatizado.shift.dtos.ShiftDTO;
+import com.abcm0018.inventarioautomatizado.shift.dtos.ShiftRequest;
+import com.abcm0018.inventarioautomatizado.shift.domain.entity.Shift;
+import com.abcm0018.inventarioautomatizado.shift.domain.entity.ShiftType;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;

@@ -1,4 +1,4 @@
-package com.abcm0018.inventarioautomatizado.workshift.exceptions;
+package com.abcm0018.inventarioautomatizado.shift.exceptions;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatus;

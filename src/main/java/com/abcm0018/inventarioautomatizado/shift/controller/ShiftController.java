@@ -1,16 +1,11 @@
-package com.abcm0018.inventarioautomatizado.workshift.controller;
+package com.abcm0018.inventarioautomatizado.shift.controller;
 
-import com.abcm0018.inventarioautomatizado.paletInfo.dtos.StaticPaletInfoDTO;
-import com.abcm0018.inventarioautomatizado.paletInfo.dtos.StaticPaletInfoRequest;
-import com.abcm0018.inventarioautomatizado.paletInfo.service.StaticPaletInfoService;
-import com.abcm0018.inventarioautomatizado.productos.dtos.ProductResponseDTO;
 import com.abcm0018.inventarioautomatizado.shared.response.ResponseBuilder;
 import com.abcm0018.inventarioautomatizado.shared.response.StandardResponse;
-import com.abcm0018.inventarioautomatizado.timesheet.dtos.ShiftDTO;
-import com.abcm0018.inventarioautomatizado.timesheet.dtos.ShiftRequest;
+import com.abcm0018.inventarioautomatizado.shift.dtos.ShiftDTO;
+import com.abcm0018.inventarioautomatizado.shift.dtos.ShiftRequest;
 import com.abcm0018.inventarioautomatizado.timesheet.dtos.TimesheetResponseDTO;
-import com.abcm0018.inventarioautomatizado.workshift.domain.entity.Shift;
-import com.abcm0018.inventarioautomatizado.workshift.service.ShiftService;
+import com.abcm0018.inventarioautomatizado.shift.service.ShiftService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

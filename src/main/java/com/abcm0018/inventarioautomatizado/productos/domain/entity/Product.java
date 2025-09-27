@@ -1,13 +1,11 @@
 package com.abcm0018.inventarioautomatizado.productos.domain.entity;
 
-import com.abcm0018.inventarioautomatizado.palets.domain.entity.Palet;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data

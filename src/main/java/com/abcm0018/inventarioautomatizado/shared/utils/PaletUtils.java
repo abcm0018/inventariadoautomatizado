@@ -21,7 +21,8 @@ public class PaletUtils {
     }
 
     public static boolean isShiftValid(String shift) {
-        return shift.matches(SHIFT_REGEX);
+
+        return shift.toUpperCase().matches(SHIFT_REGEX);
     }
 
 }

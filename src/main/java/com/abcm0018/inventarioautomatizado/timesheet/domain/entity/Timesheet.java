@@ -1,7 +1,8 @@
 package com.abcm0018.inventarioautomatizado.timesheet.domain.entity;
 
 import com.abcm0018.inventarioautomatizado.users.domain.entity.User;
-import com.abcm0018.inventarioautomatizado.workshift.domain.entity.Shift;
+import com.abcm0018.inventarioautomatizado.shift.domain.entity.Shift;
+import com.abcm0018.inventarioautomatizado.workshift.domain.entity.Workshift;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,4 +35,9 @@ public class Timesheet {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shift_id", referencedColumnName = "id")
     private Shift shift;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "workshift_id", referencedColumnName = "id")
+    private Workshift workshift;
+
 }

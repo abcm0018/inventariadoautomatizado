@@ -1,4 +1,4 @@
-package com.abcm0018.inventarioautomatizado.workshift.domain.entity;
+package com.abcm0018.inventarioautomatizado.shift.domain.entity;
 
 import com.abcm0018.inventarioautomatizado.timesheet.domain.entity.Timesheet;
 import com.abcm0018.inventarioautomatizado.users.domain.entity.User;

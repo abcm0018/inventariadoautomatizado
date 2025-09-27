@@ -4,12 +4,9 @@ import com.abcm0018.inventarioautomatizado.productos.domain.entity.Product;
 import com.abcm0018.inventarioautomatizado.productos.dtos.ProductRequest;
 import com.abcm0018.inventarioautomatizado.productos.dtos.ProductResponseDTO;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class ProductMapper {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private ProductMapper() {throw new IllegalStateException("Utility class");}
 
@@ -39,10 +36,4 @@ public class ProductMapper {
         return productList.stream().map(ProductMapper::toDTO).toList();
     }
 
-    private static String dateToString(LocalDate date){
-        if(date == null){
-            return "";
-        }
-            return date.format(FORMATTER);
-    }
 }

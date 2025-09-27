@@ -1,4 +1,4 @@
-package com.abcm0018.inventarioautomatizado.timesheet.dtos;
+package com.abcm0018.inventarioautomatizado.shift.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -3,7 +3,6 @@ package com.abcm0018.inventarioautomatizado.paletInfo.controller;
 import com.abcm0018.inventarioautomatizado.paletInfo.dtos.StaticPaletInfoDTO;
 import com.abcm0018.inventarioautomatizado.paletInfo.dtos.StaticPaletInfoRequest;
 import com.abcm0018.inventarioautomatizado.paletInfo.service.StaticPaletInfoService;
-import com.abcm0018.inventarioautomatizado.productos.dtos.ProductResponseDTO;
 import com.abcm0018.inventarioautomatizado.shared.response.ResponseBuilder;
 import com.abcm0018.inventarioautomatizado.shared.response.StandardResponse;
 import io.swagger.v3.oas.annotations.Operation;

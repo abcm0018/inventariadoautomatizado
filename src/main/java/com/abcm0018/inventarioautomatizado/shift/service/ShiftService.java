@@ -1,7 +1,7 @@
-package com.abcm0018.inventarioautomatizado.workshift.service;
+package com.abcm0018.inventarioautomatizado.shift.service;
 
-import com.abcm0018.inventarioautomatizado.timesheet.dtos.ShiftDTO;
-import com.abcm0018.inventarioautomatizado.timesheet.dtos.ShiftRequest;
+import com.abcm0018.inventarioautomatizado.shift.dtos.ShiftDTO;
+import com.abcm0018.inventarioautomatizado.shift.dtos.ShiftRequest;
 
 import java.util.List;
 

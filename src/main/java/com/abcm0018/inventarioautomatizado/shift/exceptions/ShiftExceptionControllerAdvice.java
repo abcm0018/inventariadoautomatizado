@@ -1,5 +1,6 @@
-package com.abcm0018.inventarioautomatizado.users.exceptions;
+package com.abcm0018.inventarioautomatizado.shift.exceptions;
 
+import com.abcm0018.inventarioautomatizado.palets.exceptions.PaletsServiceException;
 import com.abcm0018.inventarioautomatizado.shared.response.ResponseBuilder;
 import com.abcm0018.inventarioautomatizado.shared.response.ResponseError;
 import com.abcm0018.inventarioautomatizado.shared.response.StandardResponse;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @ControllerAdvice
 @Order(121)
 @Slf4j
-public class UserExceptionControllerAdvice {
+public class ShiftExceptionControllerAdvice {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<StandardResponse<Object>> handleException(Exception ex){
         log.error(ex.getMessage(), ex);
@@ -25,8 +26,8 @@ public class UserExceptionControllerAdvice {
         return new ResponseEntity<>(ResponseBuilder.withError(status, null, info), status);
     }
 
-    @ExceptionHandler(UserServiceException.class)
-    public ResponseEntity<StandardResponse<Object>> handleUserException(UserServiceException ex){
+    @ExceptionHandler(PaletsServiceException.class)
+    public ResponseEntity<StandardResponse<Object>> handleShiftException(ShiftServiceException ex){
         log.error(ex.getMessage(), ex);
         HttpStatus status = ex.getHttpStatus();
         String info = status.getReasonPhrase();

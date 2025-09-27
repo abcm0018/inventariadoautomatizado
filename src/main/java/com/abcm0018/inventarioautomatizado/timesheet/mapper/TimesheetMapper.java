@@ -4,7 +4,7 @@ import com.abcm0018.inventarioautomatizado.timesheet.domain.entity.Timesheet;
 import com.abcm0018.inventarioautomatizado.timesheet.dtos.TimesheetRequest;
 import com.abcm0018.inventarioautomatizado.timesheet.dtos.TimesheetResponseDTO;
 import com.abcm0018.inventarioautomatizado.users.domain.entity.User;
-import com.abcm0018.inventarioautomatizado.workshift.domain.entity.Shift;
+import com.abcm0018.inventarioautomatizado.shift.domain.entity.Shift;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -38,12 +38,5 @@ public class TimesheetMapper {
 
     public static List<TimesheetResponseDTO> toDTOList(List<Timesheet> timesheetList) {
         return timesheetList.stream().map(TimesheetMapper::toDTO).toList();
-    }
-
-    private static String dateToString(LocalDate date){
-        if(date == null){
-            return "";
-        }
-        return date.format(FORMATTER);
     }
 }

@@ -9,9 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Repository;
 
-import java.sql.Date;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,8 +16,6 @@ import java.util.List;
 @Repository
 @Slf4j
 public class CustomProductRepositoryImpl implements CustomProductRepository {
-
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     @PersistenceContext
     private EntityManager entityManager;

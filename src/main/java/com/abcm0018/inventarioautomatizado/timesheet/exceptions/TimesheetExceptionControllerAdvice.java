@@ -4,7 +4,7 @@ import com.abcm0018.inventarioautomatizado.palets.exceptions.PaletsServiceExcept
 import com.abcm0018.inventarioautomatizado.shared.response.ResponseBuilder;
 import com.abcm0018.inventarioautomatizado.shared.response.ResponseError;
 import com.abcm0018.inventarioautomatizado.shared.response.StandardResponse;
-import com.abcm0018.inventarioautomatizado.workshift.exceptions.ShiftServiceException;
+import com.abcm0018.inventarioautomatizado.shift.exceptions.ShiftServiceException;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
