@@ -2,22 +2,21 @@ package com.abcm0018.inventarioautomatizado.workshift.mapper;
 
 import com.abcm0018.inventarioautomatizado.users.domain.entity.User;
 import com.abcm0018.inventarioautomatizado.workshift.domain.entity.ChangeStatus;
-import com.abcm0018.inventarioautomatizado.workshift.domain.entity.ShiftChange;
+import com.abcm0018.inventarioautomatizado.workshift.domain.entity.WorkshiftChange;
 import com.abcm0018.inventarioautomatizado.workshift.domain.entity.Workshift;
 
 import java.time.LocalDateTime;
 
-public class ShiftChangeMapper {
-    private ShiftChangeMapper(){
+public class WorkshiftChangeMapper {
+    private WorkshiftChangeMapper(){
         throw new IllegalStateException("Utility class");
     }
 
-    public static ShiftChange toEntity(User user, Workshift current, Workshift requested, String reason){
-        return ShiftChange
+    public static WorkshiftChange toEntity(User user, Workshift current, Workshift requested, String reason){
+        return WorkshiftChange
                 .builder()
                 .user(user)
                 .currentWorkshift(current)
-                .requestedWorkshift(requested)
                 .reason(reason)
                 .status(ChangeStatus.PENDING)
                 .createdAt(LocalDateTime.now())

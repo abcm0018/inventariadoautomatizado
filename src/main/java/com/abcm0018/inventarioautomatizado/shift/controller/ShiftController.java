@@ -50,10 +50,10 @@ public class ShiftController {
     })
     @PutMapping(value = "/{shiftType}")
     @PreAuthorize("hasAuthority('ADMIN')")
-    public StandardResponse<ShiftDTO> updateShift(@PathVariable String shiftType, @RequestBody ShiftRequest request){
-        ShiftDTO response = shiftService.updateShift(shiftType, request);
+    public StandardResponse<Integer> updateShift(@PathVariable String shiftType, @RequestBody ShiftRequest request){
+        int totalUpdated = shiftService.updateShift(shiftType, request);
         log.info("Updated shift with shift type: {}", shiftType);
-        return ResponseBuilder.withUpdatedElements(HttpStatus.OK, true, 1, "Shift successfully updated", response);
+        return ResponseBuilder.withUpdatedElements(HttpStatus.OK, true, totalUpdated, "Shift successfully updated", totalUpdated);
     }
 
     @CrossOrigin
@@ -69,10 +69,10 @@ public class ShiftController {
 //    })
     @DeleteMapping(value = "/{shiftType}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERVISOR')")
-    public StandardResponse<Void> deleteShift(@PathVariable String shiftType) {
-        shiftService.deleteShift(shiftType);
+    public StandardResponse<Integer> deleteShift(@PathVariable String shiftType) {
+        int totalDeleted = shiftService.deleteShift(shiftType);
         log.info("Deleted shift with shift type: {}", shiftType);
-        return ResponseBuilder.withUpdatedElements(HttpStatus.OK, true, 1, "Shift successfully deleted");
+        return ResponseBuilder.withUpdatedElements(HttpStatus.OK, true, totalDeleted, "Shift successfully deleted");
     }
 
     @CrossOrigin

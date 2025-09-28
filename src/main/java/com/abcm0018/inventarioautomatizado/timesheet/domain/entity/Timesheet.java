@@ -39,5 +39,4 @@ public class Timesheet {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "workshift_id", referencedColumnName = "id")
     private Workshift workshift;
-
 }

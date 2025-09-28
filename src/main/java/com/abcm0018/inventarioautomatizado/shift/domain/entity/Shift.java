@@ -1,14 +1,14 @@
 package com.abcm0018.inventarioautomatizado.shift.domain.entity;
 
 import com.abcm0018.inventarioautomatizado.timesheet.domain.entity.Timesheet;
-import com.abcm0018.inventarioautomatizado.users.domain.entity.User;
+import com.abcm0018.inventarioautomatizado.workshift.domain.entity.Workshift;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalTime;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,15 +29,14 @@ public class Shift {
     private ShiftType shiftType;
 
     @Column(name = "start_time", nullable = false)
-    private LocalTime startTime;
+    private Time startTime;
 
     @Column(name = "end_time", nullable = false)
-    private LocalTime endTime;
+    private Time endTime;
+
+    @OneToMany(mappedBy = "shift", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Workshift> workshifts = new ArrayList<>();
 
     @OneToMany(mappedBy = "shift", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Timesheet> timesheet = new ArrayList<>();
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "employee_number", referencedColumnName = "employee_number", nullable = false)
-    private User user;
 }

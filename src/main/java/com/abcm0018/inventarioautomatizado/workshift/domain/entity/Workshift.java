@@ -38,7 +38,4 @@ public class Workshift {
 
     @OneToMany(mappedBy = "workshift", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Timesheet> timesheets = new ArrayList<>();
-
-    @OneToMany(mappedBy = "requestedWorkshift", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ShiftChange> changeRequests = new ArrayList<>();
 }

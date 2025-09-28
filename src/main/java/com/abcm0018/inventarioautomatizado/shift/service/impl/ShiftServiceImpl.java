@@ -1,6 +1,5 @@
 package com.abcm0018.inventarioautomatizado.shift.service.impl;
 
-import com.abcm0018.inventarioautomatizado.paletInfo.exceptions.StaticPaletInfoServiceException;
 import com.abcm0018.inventarioautomatizado.productos.constants.CustomErrorCode;
 import com.abcm0018.inventarioautomatizado.shared.config.InventariadoCacheConfig;
 import com.abcm0018.inventarioautomatizado.shared.utils.ShiftUtils;
@@ -29,6 +28,9 @@ public class ShiftServiceImpl implements ShiftService {
 
     private final ShiftRepository shiftRepository;
 
+    private static final Integer SUCCESS = 1;
+    private static final Integer ERROR = 0;
+
     @Override
     public ShiftDTO addShift(ShiftRequest shiftRequest) {
         Optional<Shift> existInfo = shiftRepository.findByShiftType(ShiftType.valueOf(shiftRequest.getShiftType().toUpperCase()));
@@ -46,7 +48,7 @@ public class ShiftServiceImpl implements ShiftService {
     }
 
     @Override
-    public ShiftDTO updateShift(String shiftType, ShiftRequest shiftRequest) {
+    public int updateShift(String shiftType, ShiftRequest shiftRequest) {
         if(!ShiftUtils.isShiftValid(shiftType.toUpperCase())){
             throw new ShiftServiceException(
                     CustomErrorCode.BAD_REQUEST,
@@ -64,15 +66,18 @@ public class ShiftServiceImpl implements ShiftService {
 
         Shift shiftToUpdate = ShiftMapper.toEntity(shiftRequest);
         shiftToUpdate.setId(existingShift.getId());
-        shiftToUpdate.setUser(existingShift.getUser());
         shiftToUpdate.setTimesheet(existingShift.getTimesheet());
 
         Shift updatedShift = shiftRepository.save(shiftToUpdate);
-        return ShiftMapper.toDTO(updatedShift);
+
+        if (updatedShift != null) {
+            return SUCCESS;
+        }
+        return ERROR;
     }
 
     @Override
-    public void deleteShift(String shiftType) {
+    public int deleteShift(String shiftType) {
         if(!ShiftUtils.isShiftValid(shiftType.toUpperCase())){
             throw new ShiftServiceException(
                     CustomErrorCode.BAD_REQUEST,
@@ -85,7 +90,11 @@ public class ShiftServiceImpl implements ShiftService {
                 .orElseThrow(() -> new ShiftServiceException(CustomErrorCode.NOT_FOUND,
                         "Shift type: " + shiftType + " not found.", HttpStatus.NOT_FOUND));
 
-        shiftRepository.delete(shift);
+        if (shift != null) {
+            shiftRepository.delete(shift);
+            return SUCCESS;
+        }
+        return ERROR;
     }
 
     @Override
@@ -98,7 +107,7 @@ public class ShiftServiceImpl implements ShiftService {
             );
         }
         Shift shift = shiftRepository.findByShiftType(ShiftType.valueOf(shiftType.toUpperCase()))
-                .orElseThrow(() -> new StaticPaletInfoServiceException(
+                .orElseThrow(() -> new ShiftServiceException(
                         CustomErrorCode.NOT_FOUND,
                         "Shift type: " + shiftType + " not found.",
                         HttpStatus.NOT_FOUND

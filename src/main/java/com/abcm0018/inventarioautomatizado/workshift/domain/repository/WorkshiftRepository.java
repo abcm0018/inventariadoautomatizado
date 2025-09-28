@@ -11,6 +11,7 @@ import java.util.Optional;
 
 public interface WorkshiftRepository extends JpaRepository<Workshift, Long> {
     List<Workshift> findByUserAndDate(User user, LocalDate date);
+    Optional<Workshift> findByIdAndUser(Long id, String employeeNumber);
     Optional<Workshift> findByUserAndDateAndShift(User user, LocalDate date, Shift shift);
     Optional<Workshift> findByDateAndShift(LocalDate date, Shift shift);
     List<Workshift> findByUser(User user);

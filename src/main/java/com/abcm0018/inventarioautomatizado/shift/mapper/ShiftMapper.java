@@ -5,6 +5,7 @@ import com.abcm0018.inventarioautomatizado.shift.dtos.ShiftRequest;
 import com.abcm0018.inventarioautomatizado.shift.domain.entity.Shift;
 import com.abcm0018.inventarioautomatizado.shift.domain.entity.ShiftType;
 
+import java.sql.Time;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -18,8 +19,8 @@ public class ShiftMapper {
         return Shift
                 .builder()
                 .shiftType(ShiftType.valueOf(request.getShiftType()))
-                .startTime(LocalTime.parse(request.getStartTime(), TIME_FORMATTER))
-                .endTime(LocalTime.parse(request.getEndTime(), TIME_FORMATTER))
+                .startTime(Time.valueOf(LocalTime.parse(request.getStartTime(), TIME_FORMATTER)))
+                .endTime(Time.valueOf(LocalTime.parse(request.getEndTime(), TIME_FORMATTER)))
                 .build();
     }
 
@@ -27,8 +28,8 @@ public class ShiftMapper {
         return ShiftDTO
                 .builder()
                 .shiftType(shift.getShiftType().toString())
-                .startTime(shift.getStartTime().format(TIME_FORMATTER))
-                .endTime(shift.getEndTime().format(TIME_FORMATTER))
+                .startTime(String.valueOf(shift.getStartTime()))
+                .endTime(String.valueOf(shift.getEndTime()))
                 .build();
     }
 

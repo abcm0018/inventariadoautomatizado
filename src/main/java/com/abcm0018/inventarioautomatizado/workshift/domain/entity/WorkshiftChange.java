@@ -14,8 +14,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "SHIFTCHANGE")
-public class ShiftChange {
+@Table(name = "WORKSHIFTCHANGE")
+public class WorkshiftChange {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,9 +25,6 @@ public class ShiftChange {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 
     // Usuario que solicita el cambio
     @ManyToOne(fetch = FetchType.LAZY)
@@ -42,9 +39,6 @@ public class ShiftChange {
     @JoinColumn(name = "current_workshift_id", nullable = false)
     private Workshift currentWorkshift;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "requested_workshift_id", nullable = false)
-    private Workshift requestedWorkshift;
 }
 
 

@@ -1,7 +1,8 @@
 package com.abcm0018.inventarioautomatizado.users.domain.entity;
 
-import com.abcm0018.inventarioautomatizado.shift.domain.entity.Shift;
 import com.abcm0018.inventarioautomatizado.timesheet.domain.entity.Timesheet;
+import com.abcm0018.inventarioautomatizado.workshift.domain.entity.WorkshiftChange;
+import com.abcm0018.inventarioautomatizado.workshift.domain.entity.Workshift;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,10 +55,13 @@ public class User implements UserDetails, Serializable {
     private Role role;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Shift> shifts = new ArrayList<>();
+    private List<Workshift> workshifts = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Timesheet> timesheets = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<WorkshiftChange> shiftsChanges = new ArrayList<>();
 
     private String getFullName (){
         return name + " " + surname;

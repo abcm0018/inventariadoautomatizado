@@ -7,8 +7,8 @@ import java.util.List;
 
 public interface ShiftService {
     ShiftDTO addShift(ShiftRequest shiftRequest);
-    void deleteShift(String shiftType);
-    ShiftDTO updateShift(String shiftType, ShiftRequest shiftRequest);
+    int deleteShift(String shiftType);
+    int updateShift(String shiftType, ShiftRequest shiftRequest);
     ShiftDTO getInfo(String shiftType);
     List<ShiftDTO> getAllShift();
 }
