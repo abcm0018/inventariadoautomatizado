@@ -1,13 +1,10 @@
 package com.abcm0018.inventarioautomatizado.palets.service.impl;
 
 import com.abcm0018.inventarioautomatizado.palets.domain.entity.Palet;
-import com.abcm0018.inventarioautomatizado.paletInfo.domain.entity.StaticPaletInfo;
 import com.abcm0018.inventarioautomatizado.palets.domain.repository.PaletRepository;
-import com.abcm0018.inventarioautomatizado.paletInfo.domain.repository.StaticPaletInfoRepository;
 import com.abcm0018.inventarioautomatizado.palets.dtos.PaletDTO;
 import com.abcm0018.inventarioautomatizado.palets.dtos.PaletRequest;
 import com.abcm0018.inventarioautomatizado.palets.exceptions.PaletsServiceException;
-import com.abcm0018.inventarioautomatizado.palets.mappers.PaletDTOMapper;
 import com.abcm0018.inventarioautomatizado.palets.mappers.PaletMapper;
 import com.abcm0018.inventarioautomatizado.palets.service.PaletService;
 import com.abcm0018.inventarioautomatizado.productos.constants.CustomErrorCode;
@@ -35,7 +32,6 @@ import java.util.List;
 public class PaletServiceImpl implements PaletService {
 
     private final PaletRepository paletRepository;
-    private final StaticPaletInfoRepository staticPaletInfoRepository;
 
     @Override
     public PaletDTO updatePalet(String sscc, PaletRequest request){
@@ -48,17 +44,6 @@ public class PaletServiceImpl implements PaletService {
                         "The Pallet with SSCC " + sscc + " doesn't exist",
                         HttpStatus.NOT_FOUND));
 
-        StaticPaletInfo existInfo = staticPaletInfoRepository.findBySscc(sscc).orElseThrow(() ->
-                new PaletsServiceException(CustomErrorCode.NOT_FOUND,
-                        "The Pallet with SSCC " + sscc + " has no associated static information",
-                        HttpStatus.NOT_FOUND));
-
-        if(existInfo.getDeletedAt() != null){
-            throw new PaletsServiceException(CustomErrorCode.NOT_FOUND,
-                    "The Pallet with SSCC " + sscc + " has no associated static information",
-                    HttpStatus.NOT_FOUND);
-        }
-
         Palet paledToUpdated = PaletMapper.toEntity(request);
         paledToUpdated.setId(existPalet.getId());
         paledToUpdated.setProduct(existPalet.getProduct());
@@ -69,7 +54,7 @@ public class PaletServiceImpl implements PaletService {
 
         paletRepository.save(paledToUpdated);
 
-        return PaletDTOMapper.toDTO(paledToUpdated, existInfo);
+        return PaletMapper.toDTO(paledToUpdated);
 
     }
 
@@ -92,7 +77,7 @@ public class PaletServiceImpl implements PaletService {
     public List<PaletDTO> getAllPalets() {
         //Datos impresos
         List<Palet> palets = paletRepository.findAll();
-        return getPaletDTOS(palets);
+        return PaletMapper.toDTOList(palets);
     }
 
     @Override
@@ -104,7 +89,7 @@ public class PaletServiceImpl implements PaletService {
         //Datos impresos
         List<Palet> palets = paletRepository.findAllByEan(ean);
         //Datos estáticos
-        return getPaletDTOS(palets);
+        return PaletMapper.toDTOList(palets);
     }
 
     @Override
@@ -116,17 +101,9 @@ public class PaletServiceImpl implements PaletService {
         //Datos impresos
         Palet palet = paletRepository.findBySscc(sscc).orElseThrow(() ->
                 new PaletsServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + sscc + " doesn't exist", HttpStatus.NOT_FOUND));
-        //Datos estáticos
-        StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                new PaletsServiceException(CustomErrorCode.NOT_FOUND,"The Pallet with SSCC " + sscc + " has no associated static information", HttpStatus.NOT_FOUND));
-        if(staticPaletInfo.getDeletedAt() != null) {
-            throw new PaletsServiceException(CustomErrorCode.NOT_FOUND,
-                    "The Pallet with SSCC " + sscc + " has no associated static information",
-                    HttpStatus.NOT_FOUND);
-        }
 
         //Crear un método para rellenar los campos estáticos del dto
-        return PaletDTOMapper.toDTO(palet, staticPaletInfo);
+        return PaletMapper.toDTO(palet);
     }
 
     @Override
@@ -138,7 +115,7 @@ public class PaletServiceImpl implements PaletService {
         //Datos impresos
         List<Palet> palets = paletRepository.findByBatchNumber(batchNumber).orElseThrow(() ->
                 new PaletsServiceException(CustomErrorCode.NOT_FOUND,"Pallet not found: " + batchNumber, HttpStatus.NOT_FOUND));
-        return getPaletDTOS(palets);
+        return PaletMapper.toDTOList(palets);
     }
 
     @Override
@@ -149,8 +126,7 @@ public class PaletServiceImpl implements PaletService {
         }
         List<Palet> palets = paletRepository.findByShift(shift.toUpperCase()).orElseThrow(() ->
                 new PaletsServiceException(CustomErrorCode.NOT_FOUND,"Pallet not found: " + shift, HttpStatus.NOT_FOUND));
-        return getPaletDTOS(palets);
-    }
+        return PaletMapper.toDTOList(palets);    }
 
     @Override
     @Cacheable(key = "{#root.methodName, #ean, #batchNumber, #productionTime, #shift, #packagingDate, #productUseByDate}")
@@ -158,7 +134,7 @@ public class PaletServiceImpl implements PaletService {
         validateInputFilter(ean, batchNumber, packagingDate, productUseByDate, productionTime, shift);
 
         final List<Palet> palets = paletRepository.findPalets(ean, batchNumber, packagingDate, productUseByDate, productionTime, shift);
-        return getPaletDTOS(palets);
+        return PaletMapper.toDTOList(palets);
     }
 
     private void validateInputFilter(String ean, String batchNumber, String packagingDate, String productUseByDate, String productionTime, String shift) throws PaletsServiceException {
@@ -215,21 +191,6 @@ public class PaletServiceImpl implements PaletService {
                     e.getMessage()
             );
         }
-    }
-
-    private List<PaletDTO> getPaletDTOS(List<Palet> palets) {
-        return palets.stream()
-                .map(palet -> {
-                    PaletDTO paletDTO = null;
-                    StaticPaletInfo staticPaletInfo = staticPaletInfoRepository.findBySscc(palet.getSscc()).orElseThrow(() ->
-                            new PaletsServiceException(CustomErrorCode.NOT_FOUND,"Associated static pallet information not found: " + palet.getEan(), HttpStatus.NOT_FOUND));
-                    if(staticPaletInfo.getDeletedAt() != null){
-                        log.warn("Error al intentar recuperar la información estática con sscc: {}", palet.getSscc());
-                    } else {
-                        paletDTO= PaletDTOMapper.toDTO(palet, staticPaletInfo);
-                    }
-                    return paletDTO;
-                }).toList();
     }
 
 }

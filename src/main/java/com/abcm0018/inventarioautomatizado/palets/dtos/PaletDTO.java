@@ -17,12 +17,4 @@ public class PaletDTO {
     private String packagingDate;
     private String productionTime;
     private String shift;
-
-    // Static info
-    private int weight;
-    private int boxesPerPalet;
-    private String stackingLimit; // Apilado máximo
-    private String createdAt;
-    private String updatedAt;
-    private String deletedAt;
 }

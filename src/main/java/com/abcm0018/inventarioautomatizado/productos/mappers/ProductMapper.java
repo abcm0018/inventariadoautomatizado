@@ -18,6 +18,10 @@ public class ProductMapper {
                 .brand(request.getBrand())
                 .description(request.getDescription())
                 .manufacturedIn(request.getManufacturedIn())
+                .stackingLimit(request.getStackingLimit())
+                .boxesPerPalet(request.getBoxesPerPalet())
+                .weight(request.getWeight())
+                .formatCode(request.getFormatCode())
                 .build();
     }
 
@@ -29,6 +33,10 @@ public class ProductMapper {
                 .brand(product.getBrand())
                 .description(product.getDescription())
                 .manufacturedIn(product.getManufacturedIn())
+                .boxesPerPalet(product.getBoxesPerPalet())
+                .weight(product.getWeight())
+                .formatCode(product.getFormatCode())
+                .stackingLimit(product.getStackingLimit())
                 .build();
     }
 

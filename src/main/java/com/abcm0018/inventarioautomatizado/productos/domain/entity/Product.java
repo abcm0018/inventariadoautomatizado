@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -29,6 +30,14 @@ public class Product {
     private String description;
     @Column(name = "manufactured_in", nullable = false)
     private String manufacturedIn;
+    @Column(name = "weight", nullable = false)
+    private BigDecimal weight;
+    @Column(name = "boxes_per_palet", nullable = false)
+    private Integer boxesPerPalet;
+    @Column(name = "stacking_limit", nullable = false)
+    private String stackingLimit; // Apilado máximo
+    @Column(name = "format_code", nullable = false)
+    private String formatCode;
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
     @Column(name = "updated_at")
