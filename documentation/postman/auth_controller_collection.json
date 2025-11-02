@@ -1,0 +1,284 @@
+{
+  "info": {
+    "name": "Inventario Automatizado - Auth API",
+    "description": "Colección de endpoints para autenticación del sistema de inventario automatizado. Usa variables de environment compartidas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Script mejorado para guardar el token",
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    ",
+                  "    if (jsonData.data && jsonData.data.token) {",
+                  "        var token = jsonData.data.token;",
+                  "        ",
+                  "        // Intenta guardar en environment primero",
+                  "        try {",
+                  "            pm.environment.set(\"token\", token);",
+                  "            console.log(\"✅ Token guardado en ENVIRONMENT\");",
+                  "        } catch (e) {",
+                  "            console.log(\"⚠️ No se pudo guardar en environment: \" + e.message);",
+                  "        }",
+                  "        ",
+                  "        // También guarda en collection variables como respaldo",
+                  "        try {",
+                  "            pm.collectionVariables.set(\"token\", token);",
+                  "            console.log(\"✅ Token guardado en COLLECTION VARIABLES\");",
+                  "        } catch (e) {",
+                  "            console.log(\"⚠️ No se pudo guardar en collection: \" + e.message);",
+                  "        }",
+                  "        ",
+                  "        // Guarda también en variables globales como último recurso",
+                  "        try {",
+                  "            pm.globals.set(\"token\", token);",
+                  "            console.log(\"✅ Token guardado en GLOBAL VARIABLES\");",
+                  "        } catch (e) {",
+                  "            console.log(\"⚠️ No se pudo guardar en globals: \" + e.message);",
+                  "        }",
+                  "        ",
+                  "        console.log(\"\\n📋 Token (primeros 50 caracteres): \" + token.substring(0, 50) + \"...\");",
+                  "        console.log(\"📏 Longitud del token: \" + token.length);",
+                  "        ",
+                  "        // Verifica que se guardó correctamente",
+                  "        var savedToken = pm.environment.get(\"token\") || pm.collectionVariables.get(\"token\") || pm.globals.get(\"token\");",
+                  "        if (savedToken) {",
+                  "            console.log(\"\\n✅ VERIFICACIÓN: Token recuperado correctamente\");",
+                  "        } else {",
+                  "            console.log(\"\\n❌ ERROR: No se pudo recuperar el token\");",
+                  "        }",
+                  "    } else {",
+                  "        console.log(\"❌ La respuesta no contiene token en data.token\");",
+                  "        console.log(\"Respuesta completa:\", JSON.stringify(jsonData, null, 2));",
+                  "    }",
+                  "} else {",
+                  "    console.log(\"❌ Error en login. Status code: \" + pm.response.code);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"usuario_ejemplo\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Endpoint para iniciar sesión. Retorna un token JWT y la información del usuario autenticado."
+          },
+          "response": [
+            {
+              "name": "Login Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"usuario_ejemplo\",\n  \"password\": \"password123\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"elementsCount\": 1,\n  \"message\": \"Successfully response\",\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"role\": \"ADMIN\",\n    \"employeeNumber\": \"EMP001\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.token) {",
+                  "        pm.collectionVariables.set(\"token\", jsonData.data.token);",
+                  "        console.log(\"Token renovado y guardado: \" + jsonData.data.token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refreshToken",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refreshToken"
+              ]
+            },
+            "description": "Endpoint para renovar el token JWT. Requiere un token válido en el header Authorization."
+          },
+          "response": [
+            {
+              "name": "Refresh Token Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/auth/refreshToken",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "refreshToken"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"elementsCount\": 1,\n  \"message\": \"Token renewed successfully\",\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"role\": \"ADMIN\",\n    \"employeeNumber\": \"EMP001\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Endpoint para cerrar sesión. Requiere un token válido en el header Authorization."
+          },
+          "response": [
+            {
+              "name": "Logout Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "logout"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"elementsCount\": 1,\n  \"message\": \"Logout successful\",\n  \"data\": \"User logged out successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

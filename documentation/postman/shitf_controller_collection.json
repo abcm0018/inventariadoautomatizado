@@ -1,0 +1,375 @@
+{
+  "info": {
+    "name": "Inventario Automatizado - Shifts API (Plantillas)",
+    "description": "Colección de endpoints para gestionar las plantillas maestras de turnos (Shifts).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.1.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Shift Management (CRUD)",
+      "description": "Operaciones CRUD básicas para gestionar las plantillas de turnos.",
+      "item": [
+        {
+          "name": "Create Shift",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shiftType\": \"MORNING\",\n  \"startTime\": \"06:00\",\n  \"endTime\": \"14:00\",\n  \"description\": \"Turno estándar de mañana\",\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts"
+              ]
+            },
+            "description": "Crea una nueva plantilla de turno (ej. Mañana, Tarde). Requiere rol ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Shift",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shiftType\": \"MORNING\",\n  \"startTime\": \"05:30\",\n  \"endTime\": \"13:30\",\n  \"description\": \"Turno de mañana actualizado (comienza antes)\",\n  \"active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/{{shiftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "{{shiftId}}"
+              ]
+            },
+            "description": "Actualiza una plantilla de turno existente. Requiere rol ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Shift Status (Activate/Deactivate)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false,\n  \"reason\": \"Desactivado temporalmente por reestructuración de horarios.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/{{shiftId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "{{shiftId}}",
+                "status"
+              ]
+            },
+            "description": "Activa o desactiva una plantilla de turno (Soft Delete). Requiere rol ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Soft Delete Shift",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/{{shiftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "{{shiftId}}"
+              ]
+            },
+            "description": "Desactiva un turno (borrado lógico). Requiere rol ADMIN."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shift Query & Search",
+      "description": "Endpoints para consultar y buscar plantillas de turnos.",
+      "item": [
+        {
+          "name": "Get Shift by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/{{shiftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "{{shiftId}}"
+              ]
+            },
+            "description": "Obtener detalles de una plantilla de turno por ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Find All Shifts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts"
+              ]
+            },
+            "description": "Obtener todas las plantillas de turno (activas e inactivas)"
+          },
+          "response": []
+        },
+        {
+          "name": "Find All Active Shifts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/active",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "active"
+              ]
+            },
+            "description": "Obtener solo las plantillas de turno activas"
+          },
+          "response": []
+        },
+        {
+          "name": "Find All Inactive Shifts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/inactive",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "inactive"
+              ]
+            },
+            "description": "Obtener solo las plantillas de turno inactivas"
+          },
+          "response": []
+        },
+        {
+          "name": "Find by Shift Type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/type/MORNING",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "type",
+                "MORNING"
+              ]
+            },
+            "description": "Obtener plantilla por su tipo (MORNING, AFTERNOON, NIGHT)"
+          },
+          "response": []
+        },
+        {
+          "name": "Check if Shift Type Exists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/exists/MORNING",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "exists",
+                "MORNING"
+              ]
+            },
+            "description": "Verifica si ya existe un turno de un tipo (MORNING, AFTERNOON, NIGHT)"
+          },
+          "response": []
+        },
+        {
+          "name": "Find Shift at Time",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/at-time?time=10:30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "at-time"
+              ],
+              "query": [
+                {
+                  "key": "time",
+                  "value": "10:30"
+                }
+              ]
+            },
+            "description": "Encuentra qué turno está activo a una hora específica del día"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Shift Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/statistics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "statistics"
+              ]
+            },
+            "description": "Obtener estadísticas de las plantillas de turnos"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shift Administration (Admin)",
+      "description": "Endpoints administrativos para configuración inicial y borrado permanente.",
+      "item": [
+        {
+          "name": "Create Default Shifts (Seeder)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/admin/create-defaults",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "admin",
+                "create-defaults"
+              ]
+            },
+            "description": "Crea los 3 turnos estándar: Mañana, Tarde, Noche. Solo si no existen. (Llama a la lógica del Seeder). Requiere rol ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Permanently Delete Shift",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/shifts/admin/delete/{{shiftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "shifts",
+                "admin",
+                "delete",
+                "{{shiftId}}"
+              ]
+            },
+            "description": "¡PELIGRO! Borra permanentemente un turno de la base de datos. Solo usar si un turno se creó por error. Requiere rol ADMIN."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "shiftId",
+      "value": "1"
+    }
+  ]
+}

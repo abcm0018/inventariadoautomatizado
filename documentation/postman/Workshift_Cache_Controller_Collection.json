@@ -1,0 +1,84 @@
+{
+  "info": {
+    "name": "Inventario Automatizado - Workshift Cache API (Admin)",
+    "description": "Endpoints administrativos para gestionar y monitorear la caché de Redis de los Workshifts. Requiere rol ADMIN.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Force Cache Reload (POST)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/workshift-cache/reload",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "workshift-cache",
+            "reload"
+          ]
+        },
+        "description": "Fuerza una pre-carga manual de los workshifts del día. Llama a `WorkshiftCacheScheduler.forcePreload()`.\n\n**Este es el endpoint que debes usar para forzar el cacheado antes de las pruebas.**"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Cache Statistics (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/workshift-cache/statistics",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "workshift-cache",
+            "statistics"
+          ]
+        },
+        "description": "Obtiene estadísticas de la caché (total de turnos vs. turnos cacheados)."
+      },
+      "response": []
+    },
+    {
+      "name": "Check Cache Health (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/admin/workshift-cache/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "workshift-cache",
+            "health"
+          ]
+        },
+        "description": "Verifica el estado de la caché y devuelve un resumen de salud."
+      },
+      "response": []
+    }
+  ],
+  "variable": []
+}

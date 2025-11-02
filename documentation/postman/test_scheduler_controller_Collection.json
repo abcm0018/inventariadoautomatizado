@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "Inventario Automatizado - Test Schedulers API (Dev)",
+    "description": "Colección de endpoints para disparar manualmente eventos de planificación y simulación. SOLO PARA PERFIL 'dev'.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Workshift Planning (Dev)",
+      "description": "Disparadores manuales para la generación de turnos (Workshifts).",
+      "item": [
+        {
+          "name": "Generate Next Week's Schedule (Manual Trigger)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/test-scheduler/generate-next-week",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "test-scheduler",
+                "generate-next-week"
+              ]
+            },
+            "description": "Dispara manualmente la lógica de 'WorkshiftService.generateNextWeekSchedule()'.\n\nÚsalo para poblar la base de datos con los turnos de la próxima semana antes de ejecutar las simulaciones de RabbitMQ."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": []
+}

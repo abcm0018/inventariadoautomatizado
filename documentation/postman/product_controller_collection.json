@@ -1,0 +1,448 @@
+{
+  "info": {
+    "name": "Inventario Automatizado - Products API (Actualizada)",
+    "description": "Colección completa de endpoints para gestión de productos, stock e inventario. Actualizada con ProductController.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.1"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Product Management (CRUD)",
+      "description": "Operaciones CRUD básicas de productos. Requieren roles específicos (ADMIN/SUPERVISOR).",
+      "item": [
+        {
+          "name": "Create Product (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ean\": \"1234567890123\",\n  \"name\": \"Producto Ejemplo\",\n  \"brand\": \"Marca Ejemplo\",\n  \"formatCode\": \"500ml\",\n  \"countryOfOrigin\": \"España\",\n  \"description\": \"Descripción del producto\",\n  \"weight\": 0.5,\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products"]
+            },
+            "description": "Crea un nuevo producto. Requiere rol ADMIN. El campo 'format' se actualiza a 'formatCode' para coincidir con DTO de Java."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by ID (GET /products/{id})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}"]
+            },
+            "description": "Obtiene un producto específico por su ID. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Products (Paginated) (GET /products)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products?page=0&size=20&sort=createdAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc",
+                  "description": "Ordenado por 'createdAt' descendente por defecto en el controlador Java."
+                }
+              ]
+            },
+            "description": "Lista todos los productos con paginación. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product (PUT /products/{id})",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Descripción actualizada - Solo se pueden actualizar description y status\",\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}"]
+            },
+            "description": "Actualiza solo la descripción y el estado de un producto existente. Name, brand, formatCode y manufacturedIn son inmutables. Requiere rol ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product (Soft/Permanent) (DELETE /products/{id})",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}"]
+            },
+            "description": "Elimina un producto (soft delete en el mundo real, pero la descripción del controlador Java sugiere eliminación. Solo si no tiene niveles de embalaje asociados. Requiere rol ADMIN."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Product Search & Detailed Get",
+      "description": "Búsqueda por identificadores, filtros y detalles.",
+      "item": [
+        {
+          "name": "Get Product by EAN (GET /products/ean/{ean})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/ean/1234567890123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "ean", "1234567890123"]
+            },
+            "description": "Busca un producto por su código EAN único (Endpoint de la colección original, se mantiene)."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Product by Brand and Format Code (GET /products/search/brand-format/{brand}/{formatCode})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/search/brand-format/Marca-Ejemplo/500ml",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "search", "brand-format", "Marca-Ejemplo", "500ml"]
+            },
+            "description": "Busca un producto por la combinación única de marca y código de formato. Nuevo endpoint del controlador."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Products by Name (GET /products/search/name)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/search/name?name=coca cola",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "search", "name"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "coca cola"
+                }
+              ]
+            },
+            "description": "Búsqueda parcial e insensible a mayúsculas/minúsculas en el nombre. Nuevo endpoint del controlador."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Products by Brand (GET /products/search/brand/{brand})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/search/brand/Coca-Cola",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "search", "brand", "Coca-Cola"]
+            },
+            "description": "Retorna todos los productos de una marca específica. La ruta se ajusta a '/search/brand' del controlador Java."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Products by Format Code (GET /products/search/format-code/{formatCode})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/search/format-code/500ml",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "search", "format-code", "500ml"]
+            },
+            "description": "Retorna todos los productos con un código de formato específico. Nuevo endpoint del controlador."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Products by Manufactured Country (GET /products/manufactured-in/{country})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/manufactured-in/España",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "manufactured-in", "España"]
+            },
+            "description": "Retorna todos los productos fabricados en un país específico. Nuevo endpoint del controlador."
+          },
+          "response": []
+        },
+        {
+          "name": "Advanced Search with Filters (GET /products/search/advanced)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/search/advanced?status=ACTIVE&brand=coca&name=cola&country=España&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "search", "advanced"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "description": "Opcional. Estado del producto"
+                },
+                {
+                  "key": "brand",
+                  "value": "coca",
+                  "description": "Opcional. Búsqueda parcial de marca"
+                },
+                {
+                  "key": "name",
+                  "value": "cola",
+                  "description": "Opcional. Búsqueda parcial de nombre"
+                },
+                {
+                  "key": "country",
+                  "value": "España",
+                  "description": "Opcional. País de manufactura"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Búsqueda avanzada de productos combinando múltiples criterios opcionales (estado, marca, nombre, país) con paginación. La versión POST de la colección anterior se reemplaza por esta versión GET del controlador Java."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Product Status Management & Counts",
+      "description": "Gestión de estados de productos y conteos.",
+      "item": [
+        {
+          "name": "Get Products by Status (GET /products/status/{status})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/status/ACTIVE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "status", "ACTIVE"]
+            },
+            "description": "Filtra productos por estado (ACTIVE, DISCONTINUED, TEMPORARY_OUT, PILOT). Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Count Products by Status (GET /products/status/{status}/count)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/status/ACTIVE/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "status", "ACTIVE", "count"]
+            },
+            "description": "Cuenta la cantidad de productos por estado. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Product Status (PUT /products/{id}/status)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStatus\": \"DISCONTINUED\",\n  \"reason\": \"Producto descatalogado\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}", "status"]
+            },
+            "description": "Cambia el estado de un producto (ACTIVE, DISCONTINUED, TEMPORARY_OUT, PILOT)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Inventory & Audit Operations",
+      "description": "Operaciones relacionadas con inventario, embalaje y auditoría.",
+      "item": [
+        {
+          "name": "Check Product Exists by Brand and Format Code (GET /products/exists/brand-format/{brand}/{formatCode})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/exists/brand-format/Marca-Ejemplo/500ml",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "exists", "brand-format", "Marca-Ejemplo", "500ml"]
+            },
+            "description": "Verifica si existe un producto con esa combinación de marca y código de formato. Nuevo endpoint del controlador."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Products With Packaging Levels (GET /products/with-pack-levels)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/with-pack-levels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "with-pack-levels"]
+            },
+            "description": "Obtiene productos que tienen al menos un nivel de embalaje configurado (listos para producción). Nuevo endpoint del controlador."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Products Without Packaging Levels (GET /products/without-pack-levels)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/without-pack-levels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "without-pack-levels"]
+            },
+            "description": "Obtiene productos que NO tienen niveles de embalaje configurados (incompletos). Nuevo endpoint del controlador."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Products Created Between Dates (GET /products/created-between)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/created-between?startDate=2023-01-01&endDate=2023-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "created-between"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Fecha de inicio (ISO DATE)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "Fecha de fin (ISO DATE)"
+                }
+              ]
+            },
+            "description": "Retorna productos creados en un rango de fechas específico (para auditoría). Nuevo endpoint del controlador."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Stock Management (Original)",
+      "description": "Gestión y consulta de stock. Se mantienen los endpoints originales de stock (asumiendo que están en otro servicio que interactúa con el de productos).",
+      "item": [
+        {
+          "name": "Get Product Stock",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/{{productId}}/stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "{{productId}}", "stock"]
+            },
+            "description": "Obtiene el stock actual (cantidad de palets) de un producto"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Products with Stock",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/stock/available",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "stock", "available"]
+            },
+            "description": "Lista productos con stock disponible"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Products without Stock",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/products/stock/unavailable",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "products", "stock", "unavailable"]
+            },
+            "description": "Lista productos sin stock"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

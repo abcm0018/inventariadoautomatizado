@@ -1,0 +1,623 @@
+{
+  "info": {
+    "name": "Inventario Automatizado - Users API",
+    "description": "Colección completa de endpoints para gestión de usuarios del sistema. Usa variables de environment compartidas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "User Management",
+      "description": "Operaciones CRUD básicas de usuarios",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeNumber\": \"EMP001\",\n  \"name\": \"Juan\",\n  \"surname\": \"Pérez\",\n  \"email\": \"juan.perez@empresa.com\",\n  \"phone\": \"+34600123456\",\n  \"workPosition\": \"Operador de Almacén\",\n  \"password\": \"Password123!\",\n  \"role\": \"OPERATOR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users"]
+            },
+            "description": "Crea un nuevo usuario. Solo ADMIN. La contraseña se encripta automáticamente."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}"]
+            },
+            "description": "Obtiene información completa del usuario. Operadores solo pueden ver su propia info."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/details",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "details"]
+            },
+            "description": "Detalles completos incluyendo estadísticas de turnos y palets escaneados"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users?page=0&size=20&sort=registrationDate,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "registrationDate,desc"
+                }
+              ]
+            },
+            "description": "Lista todos los usuarios con paginación. Solo ADMIN y SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Carlos\",\n  \"surname\": \"Pérez García\",\n  \"email\": \"juan.perez@empresa.com\",\n  \"phone\": \"+34600123456\",\n  \"workPosition\": \"Supervisor de Almacén\",\n  \"role\": \"SUPERVISOR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}"]
+            },
+            "description": "Actualiza usuario. Solo ADMIN. La contraseña NO se actualiza por este endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate User (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}"]
+            },
+            "description": "Desactiva usuario (soft delete). Los datos históricos se mantienen."
+          },
+          "response": []
+        },
+        {
+          "name": "Permanently Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/permanent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "permanent"]
+            },
+            "description": "PELIGRO: Elimina permanentemente. Solo si NO tiene turnos ni palets asociados."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Lookups",
+      "description": "Búsqueda de usuarios por diferentes criterios",
+      "item": [
+        {
+          "name": "Get User by Employee Number",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/employee/EMP001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "employee", "EMP001"]
+            },
+            "description": "Busca usuario por número de empleado único"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by Email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/email/usuario@ejemplo.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "email", "usuario@ejemplo.com"]
+            },
+            "description": "Busca usuario por email"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Password Management",
+      "description": "Gestión de contraseñas",
+      "item": [
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"OldPassword123!\",\n  \"newPassword\": \"NewPassword123!\",\n  \"confirmPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "change-password"]
+            },
+            "description": "Cambia contraseña. Requiere la contraseña actual. El usuario puede cambiar su propia contraseña."
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password (Admin Only)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPassword\": \"TempPassword123!\",\n  \"adminNotes\": \"Usuario olvidó su contraseña. Reset solicitado vía ticket #12345\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "reset-password"]
+            },
+            "description": "Restablece contraseña sin requerir la actual. Solo ADMIN. Para usuarios que olvidan su contraseña."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Status Management",
+      "description": "Control de estados de usuarios",
+      "item": [
+        {
+          "name": "Activate User",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "activate"]
+            },
+            "description": "Reactiva un usuario desactivado. También lo desbloquea y quita expiración."
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Fin de contrato temporal\",\n  \"notes\": \"Usuario notificado el 10/10/2025\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "deactivate"]
+            },
+            "description": "Desactiva usuario. No podrá hacer login ni estar en planificaciones. Requiere razón."
+          },
+          "response": []
+        },
+        {
+          "name": "Block User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Múltiples intentos de acceso fallidos\",\n  \"notes\": \"Detectado comportamiento sospechoso. Investigación en curso.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/block",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "block"]
+            },
+            "description": "Bloquea usuario por seguridad. Requiere razón obligatoria y se registra en auditoría."
+          },
+          "response": []
+        },
+        {
+          "name": "Unblock User",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/unblock",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "unblock"]
+            },
+            "description": "Quita el bloqueo de seguridad y reactiva al usuario automáticamente"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Filtering & Search",
+      "description": "Búsqueda y filtrado avanzado de usuarios",
+      "item": [
+        {
+          "name": "Get Users by Role",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/role/OPERATOR",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "role", "OPERATOR"]
+            },
+            "description": "Retorna usuarios con rol específico: ADMIN, SUPERVISOR, OPERATOR, WAREHOUSE_KEEPER"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Operators",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/operators/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "operators", "active"]
+            },
+            "description": "CRÍTICO: Usado por planificación automática de turnos. Operadores activos disponibles."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Admins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/admins/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "admins", "active"]
+            },
+            "description": "Lista de administradores activos del sistema"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Supervisors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/supervisors/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "supervisors", "active"]
+            },
+            "description": "Lista de supervisores activos del sistema"
+          },
+          "response": []
+        },
+        {
+          "name": "Count Users by Role",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/role/OPERATOR/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "role", "OPERATOR", "count"]
+            },
+            "description": "Cantidad total de usuarios con el rol especificado"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Users (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/active?page=0&size=20&sort=name,asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "active"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "name,asc"
+                }
+              ]
+            },
+            "description": "Página de usuarios con estado activo = true"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Blocked Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/blocked",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "blocked"]
+            },
+            "description": "Todos los usuarios bloqueados por seguridad"
+          },
+          "response": []
+        },
+        {
+          "name": "Count Active Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/active/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "active", "count"]
+            },
+            "description": "Total de usuarios con estado activo"
+          },
+          "response": []
+        },
+        {
+          "name": "Advanced Search with Filters",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"OPERATOR\",\n  \"isActive\": true,\n  \"isBlocked\": false,\n  \"workPosition\": \"Operador de Almacén\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/search?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "search"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Búsqueda avanzada combinando múltiples criterios"
+          },
+          "response": []
+        },
+        {
+          "name": "Search by Name",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/search/name?name=Juan",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "search", "name"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "Juan"
+                }
+              ]
+            },
+            "description": "Búsqueda parcial en nombre y apellido del usuario"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Users Working on Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/working-on/2025-10-15",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "working-on", "2025-10-15"]
+            },
+            "description": "Usuarios con turno asignado para la fecha especificada (formato: YYYY-MM-DD)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Statistics & Reports",
+      "description": "Estadísticas y métricas de usuarios",
+      "item": [
+        {
+          "name": "Get Global Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "statistics"]
+            },
+            "description": "Métricas agregadas, distribución por rol, usuarios con actividad, etc."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Top Productive Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/top-productive?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "top-productive"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Top usuarios ordenados por cantidad de palets escaneados"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Validations",
+      "description": "Validaciones y verificaciones de usuarios",
+      "item": [
+        {
+          "name": "Check Employee Number Exists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/exists/employee/EMP001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "exists", "employee", "EMP001"]
+            },
+            "description": "Verifica si existe un usuario con ese número de empleado"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Email Exists",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/exists/email/usuario@ejemplo.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "exists", "email", "usuario@ejemplo.com"]
+            },
+            "description": "Verifica si existe un usuario con ese email"
+          },
+          "response": []
+        },
+        {
+          "name": "Check Can User Work",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/can-work",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "can-work"]
+            },
+            "description": "Valida que sea operador, esté activo, no bloqueado y no expirado"
+          },
+          "response": []
+        },
+        {
+          "name": "Check User Validity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userId}}/is-valid",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userId}}", "is-valid"]
+            },
+            "description": "Valida que esté activo, no bloqueado y no expirado"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
