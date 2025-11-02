@@ -30,12 +30,12 @@ import java.util.List;
 
 /**
  * Controlador REST para administración y auditoría del módulo de email.
- *
+ * <p>
  * Endpoints disponibles:
  * - Gestión de plantillas (lectura)
  * - Consulta de auditoría e histórico
  * - Operaciones de emergencia (reintentos, pruebas)
- *
+ * <p>
  * NOTA: Los emails automáticos se disparan mediante EventListeners
  */
 @RestController

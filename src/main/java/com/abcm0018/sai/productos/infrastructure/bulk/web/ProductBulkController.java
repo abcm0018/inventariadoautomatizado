@@ -16,7 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.abcm0018.sai.productos.application.bulk.dtos.ImportJobResponseDTO;
 import com.abcm0018.sai.productos.application.bulk.dtos.ImportStatusResponseDTO;
-import com.abcm0018.sai.productos.application.bulk.job.ImportJobRepository;
 import com.abcm0018.sai.productos.infrastructure.bulk.storage.FileStorageService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.io.Resource;
@@ -32,7 +31,6 @@ import java.util.UUID;
 public class ProductBulkController {
 
 	private final ProductBulkImportService bulkImportService;
-	private final ImportJobRepository jobRepository;
 	private final FileStorageService fileStorageService;
 	private final ObjectMapper objectMapper;
 

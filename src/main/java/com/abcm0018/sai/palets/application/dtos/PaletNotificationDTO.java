@@ -2,7 +2,6 @@ package com.abcm0018.sai.palets.application.dtos;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 import com.abcm0018.sai.productos.domain.enums.PackingLevel;
 import com.abcm0018.sai.shift.domain.enums.ShiftType;

@@ -1,9 +1,7 @@
 package com.abcm0018.sai.palets.application.listener;
 
-import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.abcm0018.sai.palets.application.dtos.PaletNotificationDTO;

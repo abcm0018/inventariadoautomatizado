@@ -1,7 +1,6 @@
 package com.abcm0018.sai.productos.application.bulk.mappers;
 
 import com.abcm0018.sai.productos.application.bulk.dtos.ProductBulkImportDTO;
-import com.abcm0018.sai.productos.application.bulk.dtos.ProductWithPackLevelsDTO;
 import com.abcm0018.sai.productos.domain.entity.Product;
 import com.abcm0018.sai.productos.domain.entity.ProductPackLevel;
 import com.abcm0018.sai.productos.domain.enums.PackingLevel;

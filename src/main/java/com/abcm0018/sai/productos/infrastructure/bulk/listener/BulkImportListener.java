@@ -3,7 +3,6 @@ package com.abcm0018.sai.productos.infrastructure.bulk.listener;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;

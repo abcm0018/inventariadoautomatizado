@@ -20,7 +20,6 @@ import com.abcm0018.sai.productos.application.mappers.ProductMapper;
 import com.abcm0018.sai.productos.application.service.ProductService;
 import com.abcm0018.sai.productos.domain.entity.Product;
 import com.abcm0018.sai.productos.domain.enums.ProductStatus;
-import com.abcm0018.sai.productos.domain.repository.ProductPackLevelRepository;
 import com.abcm0018.sai.productos.domain.repository.ProductRepository;
 import com.abcm0018.sai.productos.exceptions.ProductServiceException;
 import com.abcm0018.sai.shared.constants.CustomErrorCode;
@@ -34,7 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ProductServiceImpl implements ProductService {
 
 	private final ProductRepository productRepository;
-	private final ProductPackLevelRepository productPackLevelRepository;
 	private final ProductMapper mapper;
 
 	private static final String CACHE_NAME = "products";
