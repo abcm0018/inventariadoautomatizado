@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: inventario-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: inventarioroot
+      MYSQL_DATABASE: inventario_db
+      MYSQL_USER: inventario_user
+      MYSQL_PASSWORD: inventario_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init.script:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - inventario-network
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # EMQX MQTT Broker
+  emqx:
+    image: emqx/emqx:5.5.0
+    container_name: inventario-emqx
+    restart: always
+    environment:
+      # Dashboard credentials
+      EMQX_DASHBOARD__DEFAULT_USERNAME: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: inventario2024
+      # Node name
+      EMQX_NODE_NAME: emqx@inventario-emqx
+      # Logging
+      EMQX_LOG__CONSOLE__LEVEL: warning
+      # Listeners
+      EMQX_LISTENERS__TCP__DEFAULT__MAX_CONNECTIONS: 1024000
+    ports:
+      # MQTT TCP
+      - "1883:1883"
+      # MQTT over WebSocket
+      - "8083:8083"
+      # MQTT SSL/TLS
+      - "8883:8883"
+      # WebSocket SSL/TLS
+      - "8084:8084"
+      # Dashboard/API
+      - "18083:18083"
+    volumes:
+      - emqx-data:/opt/emqx/data
+      - emqx-log:/opt/emqx/log
+    networks:
+      - inventario-network
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: inventario-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - inventario-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
+  rabbitmq-data:
+    driver: local
+  emqx-data:
+    driver: local
+  emqx-log:
+    driver: local
+
+networks:
+  inventario-network:
+    driver: bridge
