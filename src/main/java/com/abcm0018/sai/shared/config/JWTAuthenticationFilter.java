@@ -1,4 +1,4 @@
-package com.abcm0018.sai.auth.config;
+package com.abcm0018.sai.shared.config;
 
 import com.abcm0018.sai.auth.application.JWTService;
 import com.abcm0018.sai.auth.application.TokenBlackList;

@@ -11,12 +11,15 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.abcm0018.sai.productos.application.bulk.enums.LoaderType;
 
@@ -28,7 +31,8 @@ import com.abcm0018.sai.productos.application.bulk.enums.LoaderType;
  * no una regla de negocio del Dominio (como 'Producto').
  */
 @Data
-@Builder
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -66,7 +70,6 @@ public class ImportJob {
 	 */
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	@Builder.Default
 	private ImportJobStatus status = ImportJobStatus.PENDING;
 
 	/**
@@ -78,7 +81,6 @@ public class ImportJob {
 	 * Fecha y hora de creación del trabajo.
 	 */
 	@Column(nullable = false, updatable = false)
-	@Builder.Default
 	private LocalDateTime createdAt = LocalDateTime.now();
 
 	/**
@@ -100,9 +102,32 @@ public class ImportJob {
 	@Column(columnDefinition = "TEXT")
 	private String resultDetails;
 
+	public static ImportJob createNewJob(String filename, LoaderType loaderType, String storagePath, String userId) {
+
+		if (StringUtils.isBlank(filename) || StringUtils.isBlank(storagePath)
+				|| StringUtils.isBlank(userId) || StringUtils.isBlank(loaderType.toString())) {
+
+			throw new IllegalArgumentException("Error {file, storagePath, userId, loaderType} no pueden ser nulos o vacios");
+		}
+
+		ImportJob newJob = new ImportJob();
+
+		newJob.setOriginalFilename(filename);
+		newJob.setLoaderType(loaderType);
+		newJob.setStoragePath(storagePath);
+		newJob.setUserId(userId);
+
+		return newJob;
+	}
+
 	@PrePersist
 	protected void onCreate() {
 		this.createdAt = LocalDateTime.now();
+
+		if (status == null) {
+			status = ImportJobStatus.PENDING;
+		}
+
 		this.finishedAt = null;
 		this.startedAt = null;
 	}

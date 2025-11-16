@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class AuthResponseDTO implements Serializable {
     private String email;
 	private String role;
+	private String fullName;
     private String token;
     private String refreshToken;
 	private String employeeNumber;

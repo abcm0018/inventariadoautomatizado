@@ -3,13 +3,14 @@ package com.abcm0018.sai.palets.infrastructure.test;
 import java.time.LocalDate;
 import java.util.Locale;
 
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.abcm0018.sai.palets.infrastructure.messaging.config.RabbitMQConfig;
 import com.abcm0018.sai.palets.infrastructure.messaging.dtos.PaletLecturaMessageDTO;
+import com.abcm0018.sai.palets.infrastructure.messaging.config.MqttProperties;
+import com.abcm0018.sai.palets.infrastructure.messaging.config.MqttProducerConfig.MqttOutboundGateway;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
 
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 @Profile({"simulation-low", "simulation-stress"})
 public class PaletSimulationService {
 
-	private final RabbitTemplate rabbitTemplate;
+	private final ObjectMapper objectMapper;
+	private final MqttProperties mqttProperties;
+	private final MqttOutboundGateway mqttGateway;
 
 	// Usamos Faker para generar datos únicos
 	private static final Faker faker = new Faker(new Locale("es-ES"));
@@ -40,31 +43,23 @@ public class PaletSimulationService {
 	public void simulatePaletScanLow() {
 		log.info("⏱️ (LOW) SIMULADOR: Generando nuevo palet (cada 5 min)...");
 		try {
+			// 1. Crear el DTO
 			PaletLecturaMessageDTO message = createMockPalet();
-			rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY, message);
+
+			// 2. Serializar DTO a JSON (MQTT envía Strings o bytes, no objetos Java)
+			String payload = objectMapper.writeValueAsString(message);
+
+			// 3. Obtener el topic de las propiedades
+			String topic = mqttProperties.getTopic().getEscaneos();
+
+			// 4. Enviar usando la Gateway de MQTT
+			mqttGateway.sendToMqtt(payload, topic);
+
 			log.info("✅ (LOW) SIMULADOR: Mensaje enviado con SSCC: {}", message.getSscc());
 		} catch (Exception e) {
 			log.error("❌ (LOW) SIMULADOR: Error al enviar mensaje: {}", e.getMessage(), e);
 		}
 	}
-
-	/**
-	 * SIMULACIÓN DE CARGA ALTA (Estrés)
-	 * Se activa con el perfil "simulation-stress"
-	 * Envía 1 palet cada 10 segundos (10,000 ms)
-	 */
-//	@Scheduled(fixedRate = 10000)
-//	@Profile("simulation-stress")
-//	public void simulatePaletScanStress() {
-//		log.info("🚀 (STRESS) SIMULADOR: Generando nuevo palet (cada 10 seg)...");
-//		try {
-//			PaletLecturaMessageDTO message = createMockPalet();
-//			rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY, message);
-//			log.info("🔥 (STRESS) SIMULADOR: Mensaje enviado con SSCC: {}", message.getSscc());
-//		} catch (Exception e) {
-//			log.error("❌ (STRESS) SIMULADOR: Error al enviar mensaje: {}", e.getMessage(), e);
-//		}
-//	}
 
 	private static PaletLecturaMessageDTO createMockPalet() {
 

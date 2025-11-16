@@ -54,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
 				.email(userDetails.getEmail())
 				.role(userDetails.getRole().getDisplayName())
 				.employeeNumber(userDetails.getEmployeeNumber())
+				.fullName(userDetails.getFullName())
 				.token(token)
 				.refreshToken(refreshToken)
 				.build();

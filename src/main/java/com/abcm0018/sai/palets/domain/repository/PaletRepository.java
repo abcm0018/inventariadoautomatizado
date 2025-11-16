@@ -280,6 +280,18 @@ public interface PaletRepository extends JpaRepository<Palet, Long> {
 			"GROUP BY p.workshift.id ORDER BY COUNT(p) DESC")
 	List<Object[]> countPaletsByWorkshift(@Param("startDate") LocalDateTime startDate,
 			@Param("endDate") LocalDateTime endDate);
+	/**
+	 * Cuenta palets por nombre de turno en un período.
+	 * Devuelve una lista de [String shiftName, Long count]
+	 */
+	@Query("""
+		SELECT w.shiftType, COUNT(p)
+    	FROM Palet p
+    	JOIN p.workshift.shift w
+    	WHERE p.createdAt BETWEEN :startDate AND :endDate
+    	GROUP BY w.shiftType""")
+	List<Object[]> countPaletsByWorkshiftName(@Param("startDate") LocalDateTime startDate,
+			@Param("endDate") LocalDateTime endDate);
 
 	/**
 	 * Cuenta palets por usuario (operadores más productivos)

@@ -84,12 +84,7 @@ public class ProductBulkImportService {
 		log.info("Archivo validado y guardado en: {}", storagePath);
 
 		// 2. Crear la entidad Job
-		ImportJob job = ImportJob.builder()
-				.originalFilename(file.getOriginalFilename())
-				.storagePath(storagePath)
-				.loaderType(detectLoaderType(file.getOriginalFilename()))
-				.userId(getAuthenticatedUserId())
-				.build();
+		ImportJob job = ImportJob.createNewJob(file.getOriginalFilename(), detectLoaderType(file.getOriginalFilename()), storagePath, getAuthenticatedUserId());
 
 		// 3. Persistir el Job en la BBDD
 		ImportJob savedJob = importJobRepository.save(job);
@@ -100,10 +95,10 @@ public class ProductBulkImportService {
 
 		log.info("[Job {}] Creado y evento publicado. Storage path: {}", jobId, storagePath);
 
-		// 5. Mapear la respuesta (¡NUEVO!)
+		// 5. Mapear la respuesta
 		ImportJobResponseDTO responseDTO = importJobMapper.toImportJobResponseDTO(savedJob);
 
-		// 6. Añadir la lógica de mensaje (¡NUEVO!)
+		// 6. Añadir la lógica de mensaje
 		responseDTO.setMessage(
 				"Trabajo de importación iniciado. Consulte el estado en /api/v1/products/bulk/import/status/" + jobId);
 

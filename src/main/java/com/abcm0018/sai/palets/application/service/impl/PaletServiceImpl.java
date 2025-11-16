@@ -3,6 +3,7 @@ package com.abcm0018.sai.palets.application.service.impl;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.abcm0018.sai.palets.application.dtos.CreatePaletRequestDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletDetailResponseDTO;
+import com.abcm0018.sai.palets.application.dtos.PaletNotificationDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletResponseDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletSummaryResponseDTO;
 import com.abcm0018.sai.palets.application.dtos.UpdatePaletRequestDTO;
@@ -46,6 +48,7 @@ import com.abcm0018.sai.productos.domain.entity.Product;
 import com.abcm0018.sai.productos.domain.entity.ProductPackLevel;
 import com.abcm0018.sai.productos.domain.repository.ProductPackLevelRepository;
 import com.abcm0018.sai.shared.constants.CustomErrorCode;
+import com.abcm0018.sai.shift.domain.enums.ShiftType;
 import com.abcm0018.sai.timesheet.application.dtos.TimesheetDetailResponseDTO;
 import com.abcm0018.sai.timesheet.application.service.TimesheetService;
 import com.abcm0018.sai.users.domain.entity.User;
@@ -179,6 +182,11 @@ public class PaletServiceImpl implements PaletService {
 	public Page<PaletSummaryResponseDTO> findAll(Pageable pageable) {
 		log.debug("Listando palets - Página: {}, Tamaño: {}", pageable.getPageNumber(), pageable.getPageSize());
 		return paletRepository.findAll(pageable).map(paletMapper::toResponseSummary);
+	}
+
+	@Override
+	public Page<PaletNotificationDTO> findRecent100Palets(Pageable pageable) {
+		return paletRepository.findAll(pageable).map(paletMapper::toResponsePaletNotification);
 	}
 
 	@Override
@@ -404,11 +412,18 @@ public class PaletServiceImpl implements PaletService {
 
 	@Override
 	@Transactional(readOnly = true)
-	@Cacheable(value = "expiringPaletsCount", key = "'expired'")
+	//@Cacheable(value = "expiringPaletsCount", key = "'expired'")
 	public Long countExpiredPalets() {
 		log.debug("Contando palets caducados");
 
 		Long count = paletRepository.countExpiredPalets(LocalDate.now());
+
+		// Si 'count' es nulo, devuelve explícitamente 0L (un Long),
+		// no 0 (que Java podría interpretar como Integer).
+		if (count == null) {
+			log.debug("Conteo de caducados es nulo, devolviendo 0L");
+			return 0L;
+		}
 
 		log.debug("Count de palets expirados: {}", count);
 		return count;
@@ -416,7 +431,7 @@ public class PaletServiceImpl implements PaletService {
 
 	@Override
 	@Transactional(readOnly = true)
-	@Cacheable(value = "totalStock")
+	//@Cacheable(value = "totalStock")
 	public Long getTotalStock() {
 		log.debug("Obteniendo stock total");
 
@@ -595,39 +610,49 @@ public class PaletServiceImpl implements PaletService {
 
 	@Override
 	@Transactional(readOnly = true)
-	@Cacheable(value = "productionByWorkshift",
-			key = "#startDate.toString() + '_' + #endDate.toString()")
+	//@Cacheable(value = "productionByWorkshift",
+	//		key = "#startDate.toString() + '_' + #endDate.toString()")
 	public Map<String, Object> getProductionByWorkshift(LocalDate startDate, LocalDate endDate) {
 		log.debug("Obteniendo producción por turno del {} al {}", startDate, endDate);
 
 		validateDateRange(startDate, endDate);
 
 		LocalDateTime startDateTime = startDate.atStartOfDay();
-		LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
+		LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
 
-		List<Object[]> workshiftCounts = paletRepository.countPaletsByWorkshift(startDateTime, endDateTime);
+		List<Object[]> workshiftCounts = paletRepository.countPaletsByWorkshiftName(startDateTime, endDateTime);
 
-		List<Map<String, Object>> workshiftStats = new ArrayList<>();
-		long totalPalets = 0;
-
-		for (Object[] result : workshiftCounts) {
-			Map<String, Object> stat = new HashMap<>();
-			Long count = (Long) result[1];
-
-			stat.put("count", count);
-			workshiftStats.add(stat);
-			totalPalets += count;
+		Map<String, Long> shiftCounts = new HashMap<>();
+		for (Object[] row : workshiftCounts) {
+			ShiftType shiftType = (ShiftType) row[0];
+			String shiftName = shiftType.name();
+			Long count = (Long) row[1];
+			shiftCounts.put(shiftName, count);
 		}
 
-		Map<String, Object> stats = new HashMap<>();
-		stats.put("startDate", startDate);
-		stats.put("endDate", endDate);
-		stats.put("totalPalets", totalPalets);
-		stats.put("workshiftStats", workshiftStats);
+		for (ShiftType shift : ShiftType.values()) {
+			shiftCounts.putIfAbsent(shift.name(), 0L);
+		}
 
-		log.info("Producción por turno: {} palets", totalPalets);
+		Map<String, Object> finalResponse = new HashMap<>();
+		finalResponse.put("startDate", startDate);
+		finalResponse.put("endDate", endDate);
+		finalResponse.put("totalPalets", shiftCounts.values().stream().mapToLong(Long::longValue).sum());
 
-		return stats;
+		// Convertir el Map { "MAÑANA": 100 } en el Array [ { "shift": "MAÑANA", "count": 100 } ]
+		// que el frontend (paletService.js) está esperando
+		List<Map<String, Object>> workshiftStats = shiftCounts.entrySet().stream()
+				.map(entry -> {
+					Map<String, Object> item = new HashMap<>();
+					item.put("shift", entry.getKey());
+					item.put("count", entry.getValue());
+					return item;
+				}).toList();
+
+		finalResponse.put("workshiftStats", workshiftStats);
+		log.debug("Estadísticas procesadas: {}", finalResponse);
+
+		return finalResponse;
 	}
 
 	@Override

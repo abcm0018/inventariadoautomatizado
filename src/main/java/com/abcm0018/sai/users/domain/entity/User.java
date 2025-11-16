@@ -7,10 +7,11 @@ import com.abcm0018.sai.workshift.domain.entity.WorkshiftSwapRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,10 +27,9 @@ import java.util.List;
  * Entidad que representa un usuario del sistema.
  * Implementa UserDetails para integración con Spring Security.
  */
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
+@Getter
+@Setter
+@ToString(exclude = {"workshifts", "scannedPalets", "swapRequests"})
 @Entity
 @Table(
 		name = "USERS",
@@ -45,8 +45,6 @@ public class User implements UserDetails, Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-	// ========== IDENTIFICACIÓN ==========
-
 	@Column(name = "EMPLOYEE_NUMBER", nullable = false, unique = true, length = 20)
 	private String employeeNumber;
 
@@ -59,8 +57,6 @@ public class User implements UserDetails, Serializable {
 	@Column(name = "EMAIL", nullable = false, unique = true, length = 150)
 	private String email;
 
-	// ========== SEGURIDAD ==========
-
 	@JsonIgnore // NUNCA exponer en API REST
 	@Column(name = "PASSWORD", nullable = false)
 	private String password; // Hasheada con BCrypt
@@ -69,38 +65,26 @@ public class User implements UserDetails, Serializable {
 	@Column(name = "ROLE", nullable = false, length = 20)
 	private Role role;
 
-	// ========== INFORMACIÓN LABORAL ==========
-
 	@Column(name = "JOB_POSITION", nullable = false, length = 100)
 	private String jobPosition;
 
 	@Column(name = "REGISTRATION_DATE", nullable = false)
-	@Builder.Default
 	private LocalDate registrationDate = LocalDate.now();
 
-	// ========== ESTADO DE LA CUENTA ==========
-
 	@Column(name = "ACTIVE", nullable = false)
-	@Builder.Default
 	private boolean active = true;
 
 	@Column(name = "BLOCKED", nullable = false)
-	@Builder.Default
 	private boolean blocked = false;
 
 	@Column(name = "EXPIRED", nullable = false)
-	@Builder.Default
 	private boolean expired = false;
-
-	// ========== AUDITORÍA ==========
 
 	@Column(name = "CREATE_AT", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
 	@Column(name = "UPDATE_AT")
 	private LocalDateTime updatedAt;
-
-	// ========== RELACIONES ==========
 
 	/**
 	 * Turnos asignados al usuario (Workshift, NO Shift)
@@ -121,8 +105,6 @@ public class User implements UserDetails, Serializable {
 	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
 	private List<WorkshiftSwapRequest> swapRequests = new ArrayList<>();
 
-	// ========== LIFECYCLE CALLBACKS ==========
-
 	@PrePersist
 	protected void onCreate() {
 		this.createdAt = LocalDateTime.now();
@@ -137,8 +119,6 @@ public class User implements UserDetails, Serializable {
 	protected void onUpdate() {
 		this.updatedAt = LocalDateTime.now();
 	}
-
-	// ========== MÉTODOS DE UTILIDAD ==========
 
 	/**
 	 * Obtiene el nombre completo del usuario
@@ -193,8 +173,6 @@ public class User implements UserDetails, Serializable {
 				.findFirst()
 				.orElse(null);
 	}
-
-	// ========== SPRING SECURITY - UserDetails ==========
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {

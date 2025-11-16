@@ -27,7 +27,7 @@ public class ValidationResultDTO {
 	 * - Status es válido
 	 * - Listos para persistencia
 	 */
-	private List<ProductWithPackLevelsDTO> validProducts = new ArrayList<>();
+	private List<ProductWithPackLevelsDTO> validProducts;
 
 	/**
 	 * Errores encontrados durante validación
@@ -41,7 +41,7 @@ public class ValidationResultDTO {
 	 * IMPORTANTE: La validación continúa incluso encontrando errores
 	 * para reportar TODOS los problemas al usuario de una vez
 	 */
-	private List<BulkImportErrorDTO> errors = new ArrayList<>();
+	private List<BulkImportErrorDTO> errors;
 
 	public void addErrors(List<BulkImportErrorDTO> errorList) {
 		this.errors.addAll(errorList);

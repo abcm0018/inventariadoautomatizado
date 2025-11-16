@@ -1,7 +1,10 @@
 package com.abcm0018.sai.shared.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -15,9 +18,15 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Configuration
-// Habilita el servidor WebSockets
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+	private final ChannelInterceptor jwtStompInterceptor;
+
+	@Autowired
+	public WebSocketConfig(ChannelInterceptor jwtStompInterceptor) {
+		this.jwtStompInterceptor = jwtStompInterceptor;
+	}
 
 	@Override
 	public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -45,7 +54,17 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 		registry.addEndpoint("/wssai")
 				// Permite conexiones desde cualquier origen
 				// En producción se debe restringir a la URL del frontend
-				.setAllowedOrigins("http://localhost:8000")
+				.setAllowedOrigins("http://localhost:63342/")
 				.withSockJS();
+	}
+
+	@Override
+	public void configureClientInboundChannel(ChannelRegistration registration) {
+		log.info("Registrando JwtStompInterceptor en el clientInboundChannel...");
+		registration.interceptors(jwtStompInterceptor);
+	}
+
+	@Override
+	public void configureClientOutboundChannel(ChannelRegistration registration) {
 	}
 }

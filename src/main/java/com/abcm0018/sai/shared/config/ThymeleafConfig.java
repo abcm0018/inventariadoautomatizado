@@ -1,4 +1,4 @@
-package com.abcm0018.sai.auth.config;
+package com.abcm0018.sai.shared.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,0 +1,733 @@
+{
+  "info": {
+    "name": "Inventario Automatizado - Palets API (RFID)",
+    "description": "Colección completa de endpoints para gestión de palets con tecnología RFID. Incluye registro automático, check-in, trazabilidad, alertas de caducidad y estadísticas de producción.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Palet Management (CRUD)",
+      "description": "Operaciones CRUD básicas de palets. Registro automático con check-in y trazabilidad completa.",
+      "item": [
+        {
+          "name": "Create Palet (POST) - Escaneo RFID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sscc\": \"123456789012345678\",\n  \"packLevelId\": 1,\n  \"userId\": {{userId}},\n  \"batchNumber\": \"LOTE-2025-001\",\n  \"expiryDate\": \"2025-12-31\",\n  \"quantity\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets"]
+            },
+            "description": "Registra un nuevo palet escaneado. Incluye check-in automático si es el primer escaneo del día. Requiere rol ADMIN, SUPERVISOR u OPERATOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recent 100 Palets (GET /recent-100)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/recent-100",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "recent-100"]
+            },
+            "description": "Obtiene los 100 palets más recientes para notificaciones en tiempo real."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Palet by ID (GET /palets/{id})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "1"]
+            },
+            "description": "Obtiene un palet específico por su ID con detalles completos."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Palet by SSCC (GET /palets/sscc/{sscc})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/sscc/123456789012345678",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "sscc", "123456789012345678"]
+            },
+            "description": "Busca un palet usando su código SSCC único (18 dígitos)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Palets (Paginated) (GET /palets)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets?page=0&size=20&sort=createdAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc"
+                }
+              ]
+            },
+            "description": "Lista todos los palets con paginación. Ordenado por fecha de creación descendente por defecto."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Palet (PUT /palets/{id})",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sscc\": \"123456789012345678\",\n  \"batchNumber\": \"LOTE-2025-001-UPDATED\",\n  \"expiryDate\": \"2025-12-31\",\n  \"quantity\": 950\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "1"]
+            },
+            "description": "Actualiza un palet existente. Solo supervisores y administradores."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Palet (DELETE /palets/{id})",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "1"]
+            },
+            "description": "Elimina un palet. Solo administradores pueden eliminar palets."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Search by Product & Pack Level",
+      "description": "Búsqueda y filtrado por producto y nivel de embalaje.",
+      "item": [
+        {
+          "name": "Get Palets by Product (GET /product/{productId})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/product/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "product", "{{productId}}"]
+            },
+            "description": "Obtiene todos los palets de un producto específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Palets by Product (FIFO - By Expiry)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/product/{{productId}}/by-expiry",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "product", "{{productId}}", "by-expiry"]
+            },
+            "description": "Retorna palets ordenados del más antiguo al más nuevo para gestión FIFO."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Oldest Palets by Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/product/{{productId}}/oldest?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "product", "{{productId}}", "oldest"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Cantidad de palets a retornar"
+                }
+              ]
+            },
+            "description": "Obtiene los palets más antiguos de un producto. Útil para priorizar despachos según FIFO."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Newest Palets by Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/product/{{productId}}/newest?limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "product", "{{productId}}", "newest"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Obtiene los palets más recientes de un producto."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Palets by Pack Level (GET /pack-level/{packLevelId})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/pack-level/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "pack-level", "1"]
+            },
+            "description": "Obtiene todos los palets de un nivel de embalaje específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Palets by Pack Level (FIFO)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/pack-level/1/by-expiry",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "pack-level", "1", "by-expiry"]
+            },
+            "description": "Gestión FIFO a nivel de embalaje - palets ordenados por caducidad."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Palets by GTIN (GET /gtin/{gtin})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/gtin/1234567890123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "gtin", "1234567890123"]
+            },
+            "description": "Obtiene palets por GTIN del nivel de embalaje."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Search by Batch & Traceability",
+      "description": "Búsqueda por lotes y trazabilidad completa.",
+      "item": [
+        {
+          "name": "Get Palets by Batch (GET /batch/{batchNumber})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/batch/LOTE-2025-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "batch", "LOTE-2025-001"]
+            },
+            "description": "Obtiene palets por número de lote. Útil para trazabilidad y gestión de calidad."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Palets by Product and Batch",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/product/{{productId}}/batch/LOTE-2025-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "product", "{{productId}}", "batch", "LOTE-2025-001"]
+            },
+            "description": "Obtiene palets de un producto y lote específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Palets by Pack Level and Batch",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/pack-level/1/batch/LOTE-2025-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "pack-level", "1", "batch", "LOTE-2025-001"]
+            },
+            "description": "Obtiene palets de un nivel de embalaje y lote específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Full Traceability by SSCC",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/traceability/sscc/123456789012345678",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "traceability", "sscc", "123456789012345678"]
+            },
+            "description": "Obtiene trazabilidad completa de un palet: información del palet, lote, producto y palets relacionados."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Search by User & Workshift",
+      "description": "Consultas por usuario y turno de trabajo.",
+      "item": [
+        {
+          "name": "Get Palets by User (GET /user/{userId})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "user", "{{userId}}"]
+            },
+            "description": "Obtiene palets escaneados por un usuario específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Palets by Workshift (GET /workshift/{workshiftId})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/workshift/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "workshift", "1"]
+            },
+            "description": "Obtiene palets producidos en un turno específico."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Expiry Alerts & FIFO Management",
+      "description": "Alertas de caducidad y gestión FIFO automática.",
+      "item": [
+        {
+          "name": "Get Palets Expiring Soon (7 days)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/expiring-soon",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "expiring-soon"]
+            },
+            "description": "⚠️ Retorna palets que caducan en los próximos 7 días."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Critical Expiry Palets (3 days) - URGENT",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/expiring-critical",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "expiring-critical"]
+            },
+            "description": "🚨 URGENTE: Retorna palets que caducan en los próximos 3 días."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Expired Palets - REMOVE FROM INVENTORY",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/expired",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "expired"]
+            },
+            "description": "❌ Retorna palets que ya han caducado. RETIRAR INMEDIATAMENTE de inventario."
+          },
+          "response": []
+        },
+        {
+          "name": "Count Palets Expiring Soon",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/expiring-soon/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "expiring-soon", "count"]
+            },
+            "description": "Cuenta palets próximos a caducar (7 días)."
+          },
+          "response": []
+        },
+        {
+          "name": "Count Expired Palets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/expired/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "expired", "count"]
+            },
+            "description": "Cuenta palets caducados."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Stock & Inventory Management",
+      "description": "Gestión de stock e inventario en tiempo real.",
+      "item": [
+        {
+          "name": "Get Total Stock (GET /stock/total)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/stock/total",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "stock", "total"]
+            },
+            "description": "Obtiene el stock total de palets en inventario."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stock by Product (GET /stock/by-product)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/stock/by-product",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "stock", "by-product"]
+            },
+            "description": "Retorna cantidad de palets agrupados por cada producto en inventario."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stock by Pack Level (GET /stock/by-pack-level)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/stock/by-pack-level",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "stock", "by-pack-level"]
+            },
+            "description": "Retorna cantidad de palets agrupados por cada nivel de embalaje."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Inventory Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/product/{{productId}}/inventory-details",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "product", "{{productId}}", "inventory-details"]
+            },
+            "description": "Detalles completos de inventario de un producto: stock, palets antiguos, próximos a caducar y recomendaciones."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Production Statistics",
+      "description": "Estadísticas y métricas de producción en tiempo real.",
+      "item": [
+        {
+          "name": "Get Daily Production Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/statistics/daily?startDate=2025-01-01&endDate=2025-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "statistics", "daily"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01",
+                  "description": "Fecha inicio (ISO DATE)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-31",
+                  "description": "Fecha fin (ISO DATE)"
+                }
+              ]
+            },
+            "description": "Analiza producción por día en un rango de fechas."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Production by Workshift",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/statistics/by-workshift?startDate=2025-01-01&endDate=2025-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "statistics", "by-workshift"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-31"
+                }
+              ]
+            },
+            "description": "Obtiene producción agrupada por turno de trabajo."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Production by User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/statistics/by-user?startDate=2025-01-01&endDate=2025-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "statistics", "by-user"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-31"
+                }
+              ]
+            },
+            "description": "Muestra productividad de cada operador en el rango de fechas."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Average Palets Per Day",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/statistics/average-per-day?startDate=2025-01-01&endDate=2025-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "statistics", "average-per-day"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-31"
+                }
+              ]
+            },
+            "description": "Obtiene el promedio de palets producidos por día."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Global Production Statistics - DASHBOARD",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/statistics/global",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "statistics", "global"]
+            },
+            "description": "Dashboard completo: stock, alertas de caducidad y métricas globales de producción."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Advanced Search & Filters",
+      "description": "Búsqueda avanzada con múltiples filtros combinados.",
+      "item": [
+        {
+          "name": "Advanced Search with Multiple Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/search?productId={{productId}}&packLevelId=1&userId={{userId}}&workshiftId=1&batchNumber=LOTE-2025-001&startDate=2025-01-01&endDate=2025-12-31&page=0&size=20&sort=createdAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "search"],
+              "query": [
+                {
+                  "key": "productId",
+                  "value": "{{productId}}",
+                  "description": "Opcional - ID del producto"
+                },
+                {
+                  "key": "packLevelId",
+                  "value": "1",
+                  "description": "Opcional - ID del nivel de embalaje"
+                },
+                {
+                  "key": "userId",
+                  "value": "{{userId}}",
+                  "description": "Opcional - ID del usuario"
+                },
+                {
+                  "key": "workshiftId",
+                  "value": "1",
+                  "description": "Opcional - ID del turno"
+                },
+                {
+                  "key": "batchNumber",
+                  "value": "LOTE-2025-001",
+                  "description": "Opcional - Número de lote"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2025-01-01",
+                  "description": "Opcional - Fecha inicio"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-12-31",
+                  "description": "Opcional - Fecha fin"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc"
+                }
+              ]
+            },
+            "description": "Búsqueda avanzada combinando múltiples criterios: producto, nivel embalaje, usuario, turno, lote y fechas."
+          },
+          "response": []
+        },
+        {
+          "name": "Quick Search by SSCC or Batch",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/palets/quick-search?search=LOTE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "palets", "quick-search"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "LOTE",
+                  "description": "Término de búsqueda (busca en SSCC o número de lote)"
+                }
+              ]
+            },
+            "description": "Búsqueda rápida por SSCC o número de lote. Busca palets cuyo SSCC o lote contenga el término."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "productId",
+      "value": "1"
+    },
+    {
+      "key": "userId",
+      "value": "1"
+    }
+  ]
+}

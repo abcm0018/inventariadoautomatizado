@@ -13,6 +13,7 @@ import org.mapstruct.ReportingPolicy;
 
 import com.abcm0018.sai.palets.application.dtos.CreatePaletRequestDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletDetailResponseDTO;
+import com.abcm0018.sai.palets.application.dtos.PaletNotificationDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletResponseDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletSummaryResponseDTO;
 import com.abcm0018.sai.palets.application.dtos.UpdatePaletRequestDTO;
@@ -196,6 +197,30 @@ public interface PaletMapper {
 	List<PaletSummaryResponseDTO> toSummaryResponseList(List<Palet> palets);
 
 	/**
+	 * Convierte una entidad Palet al DTO específico para notificaciones WebSocket.
+	 * <p>
+	 * Extrae toda la información enriquecida necesaria para
+	 * la UI del dashboard en tiempo real, coincidiendo con la lógica
+	 * que estaba originalmente en PaletEventListener.
+	 *
+	 * @param palet La entidad Palet completa (con relaciones cargadas)
+	 * @return DTO de notificación para WebSocket
+	 */
+	@Mapping(target = "gtin", source = "productPackLevel.gtin")
+	@Mapping(target = "productSku", source = "productPackLevel.product.formatCode")
+	@Mapping(target = "productName", source = "productPackLevel.product.name")
+	@Mapping(target = "brand", source = "productPackLevel.product.brand")
+	@Mapping(target = "packLevel", source = "productPackLevel.packingLevel")
+	@Mapping(target = "unitsInLevel", source = "productPackLevel.unitsInLevel")
+	@Mapping(target = "grossWeightKg", source = "productPackLevel.netWeight")
+	@Mapping(target = "stackingLimit", source = "productPackLevel.stackingLimit")
+	@Mapping(target = "employeeName", source = "user.fullName")
+	@Mapping(target = "shiftType", source = "workshift.shift.shiftType")
+	@Mapping(target = "dimensionsMm", ignore = true)
+	@Mapping(target = "isExpired", ignore = true)
+	PaletNotificationDTO toResponsePaletNotification(Palet palet);
+
+	/**
 	 * Value Object para encapsular información de caducidad
 	 * <p>
 	 * Elimina duplicación al pasar múltiples valores entre métodos Facilita testing y mantenimiento
@@ -226,6 +251,27 @@ public interface PaletMapper {
 		String statusFlag = determineExpiryStatus(daysUntilExpiry, isExpiredFlag, isCriticalFlag, isExpiringFlag);
 
 		return new ExpiryInfo(daysUntilExpiry, isExpiredFlag, isExpiringFlag, isCriticalFlag, statusFlag);
+	}
+
+	/**
+	 * Enriquece el PaletNotificationDTO con campos calculados (dimensiones y caducidad).
+	 * MapStruct ejecutará esto automáticamente después de toResponsePaletNotification.
+	 */
+	@AfterMapping
+	default void enrichNotificationDTO(Palet palet, @MappingTarget PaletNotificationDTO dto) {
+		if (palet == null || dto == null) {
+			return;
+		}
+
+		// 1. Calcular Caducidad (tomado de la lógica de Palet.java)
+		dto.setExpired(palet.isExpired());
+
+		// 2. Calcular Dimensiones (tomado de la lógica de PaletEventListener)
+		ProductPackLevel packLevel = palet.getProductPackLevel(); //
+		if (packLevel != null && packLevel.getWidthMM() != null && packLevel.getHeightMM() != null) {
+			String dimensions = String.format("%dx%d", packLevel.getWidthMM().intValue(), packLevel.getHeightMM().intValue());
+			dto.setDimensionsMm(dimensions); //
+		}
 	}
 
 	/**

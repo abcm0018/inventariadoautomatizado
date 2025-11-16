@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.abcm0018.sai.palets.application.dtos.CreatePaletRequestDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletDetailResponseDTO;
+import com.abcm0018.sai.palets.application.dtos.PaletNotificationDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletResponseDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletSummaryResponseDTO;
 import com.abcm0018.sai.palets.application.dtos.UpdatePaletRequestDTO;
@@ -23,6 +24,7 @@ public interface PaletService {
 	PaletDetailResponseDTO findById(Long id);
 	PaletDetailResponseDTO findBySscc(String sscc);
 	Page<PaletSummaryResponseDTO> findAll(Pageable pageable);
+	Page<PaletNotificationDTO> findRecent100Palets(Pageable pageable);
 	PaletDetailResponseDTO updatePalet(Long id, UpdatePaletRequestDTO request);
 	void deletePalet(Long id);
 

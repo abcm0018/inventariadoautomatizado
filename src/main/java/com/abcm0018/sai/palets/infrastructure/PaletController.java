@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.abcm0018.sai.palets.application.dtos.CreatePaletRequestDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletDetailResponseDTO;
+import com.abcm0018.sai.palets.application.dtos.PaletNotificationDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletResponseDTO;
 import com.abcm0018.sai.palets.application.dtos.PaletSummaryResponseDTO;
 import com.abcm0018.sai.palets.application.dtos.UpdatePaletRequestDTO;
@@ -63,8 +65,6 @@ public class PaletController {
 
 	private final PaletService paletService;
 
-	// ========== OPERACIONES CRUD ==========
-
 	/**
 	 * Crear un nuevo palet (escaneo etiqueta)
 	 * <p>
@@ -99,10 +99,25 @@ public class PaletController {
 	}
 
 	@CrossOrigin
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'OPERATOR')")
+	@GetMapping("/recent-100")
+	public StandardResponse<List<PaletNotificationDTO>> getRecent100Palets() {
+
+		// Creamos el plegable para los 100 últimos palets
+		Pageable pageable = PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+		Page<PaletNotificationDTO> recent100pales = paletService.findRecent100Palets(pageable);
+
+		List<PaletNotificationDTO> content = recent100pales.getContent();
+
+		String message = String.format("Se encontraron %d palets recientes.", content.size());
+		return ResponseBuilder.with(HttpStatus.OK, true, message, content);
+	}
+
+	@CrossOrigin
 	@GetMapping("/{id}")
 	@Operation(summary = "Obtener palet por ID")
-	public StandardResponse<PaletDetailResponseDTO> getPaletById(
-			@PathVariable @Parameter(description = "ID del palet") Long id) {
+	public StandardResponse<PaletDetailResponseDTO> getPaletById(@PathVariable @Parameter(description = "ID del palet") Long id) {
 
 		log.debug("Consultando palet con ID: {}", id);
 
@@ -174,22 +189,14 @@ public class PaletController {
 			summary = "Eliminar un palet",
 			description = "Solo administradores pueden eliminar palets"
 	)
-	public StandardResponse<Void> deletePalet(
-			@PathVariable @Parameter(description = "ID del palet") Long id) {
+	public StandardResponse<Void> deletePalet(@PathVariable @Parameter(description = "ID del palet") Long id) {
 
 		log.warn("Eliminando palet con ID: {}", id);
 
 		paletService.deletePalet(id);
 
-		return ResponseBuilder.withDeletedElements(
-				HttpStatus.OK,
-				true,
-				1,
-				"Palet eliminado exitosamente"
-		);
+		return ResponseBuilder.withDeletedElements(HttpStatus.OK, true, 1, "Palet eliminado exitosamente");
 	}
-
-	// ========== BÚSQUEDAS POR PRODUCTO ==========
 
 	@CrossOrigin
 	@GetMapping("/product/{productId}")
@@ -253,7 +260,7 @@ public class PaletController {
 	@Operation(summary = "Obtener palets más recientes de un producto")
 	public StandardResponse<List<PaletResponseDTO>> getNewestPalets(
 			@PathVariable Long productId,
-			@RequestParam(defaultValue = "10") int limit) {
+			@RequestParam(defaultValue = "50") int limit) {
 
 		log.debug("Consultando {} palets más recientes del producto {}", limit, productId);
 
@@ -266,8 +273,6 @@ public class PaletController {
 				palets
 		);
 	}
-
-	// ========== BÚSQUEDAS POR NIVEL DE EMBALAJE ==========
 
 	@CrossOrigin
 	@GetMapping("/pack-level/{packLevelId}")
@@ -296,12 +301,7 @@ public class PaletController {
 
 		List<PaletResponseDTO> palets = paletService.findByPackLevelIdOrderedByExpiry(packLevelId);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				"Palets ordenados por caducidad",
-				palets
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, "Palets ordenados por caducidad", palets);
 	}
 
 	@CrossOrigin
@@ -321,8 +321,6 @@ public class PaletController {
 				palets
 		);
 	}
-
-	// ========== BÚSQUEDAS POR LOTE ==========
 
 	@CrossOrigin
 	@GetMapping("/batch/{batchNumber}")
@@ -379,8 +377,6 @@ public class PaletController {
 		);
 	}
 
-	// ========== BÚSQUEDAS POR USUARIO Y TURNO ==========
-
 	@CrossOrigin
 	@GetMapping("/user/{userId}")
 	@Operation(summary = "Obtener palets escaneados por un usuario")
@@ -408,8 +404,6 @@ public class PaletController {
 		String message = String.format("Encontrados %d palets del turno", palets.size());
 		return ResponseBuilder.with(HttpStatus.OK, true, message, palets);
 	}
-
-	// ========== OPERACIONES DE CADUCIDAD ==========
 
 	@CrossOrigin
 	@GetMapping("/expiring-soon")
@@ -496,10 +490,9 @@ public class PaletController {
 		return ResponseBuilder.with(HttpStatus.OK, true, message, count);
 	}
 
-	// ========== OPERACIONES DE INVENTARIO ==========
-
 	@CrossOrigin
 	@GetMapping("/stock/total")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'OPERATOR')")
 	@Operation(summary = "Obtener stock total de palets en inventario")
 	public StandardResponse<Long> getTotalStock() {
 
@@ -569,8 +562,6 @@ public class PaletController {
 				details
 		);
 	}
-
-	// ========== ESTADÍSTICAS DE PRODUCCIÓN ==========
 
 	@CrossOrigin
 	@GetMapping("/statistics/daily")
@@ -668,8 +659,6 @@ public class PaletController {
 		);
 	}
 
-	// ========== TRAZABILIDAD ==========
-
 	@CrossOrigin
 	@GetMapping("/traceability/sscc/{sscc}")
 	@Operation(
@@ -690,8 +679,6 @@ public class PaletController {
 				traceability
 		);
 	}
-
-	// ========== BÚSQUEDAS AVANZADAS ==========
 
 	@CrossOrigin
 	@GetMapping("/search")

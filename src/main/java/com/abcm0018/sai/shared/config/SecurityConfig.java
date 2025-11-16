@@ -1,4 +1,4 @@
-package com.abcm0018.sai.auth.config;
+package com.abcm0018.sai.shared.config;
 
 import java.util.Arrays;
 import java.util.List;
@@ -118,8 +118,8 @@ public class SecurityConfig {
     public WebSecurityCustomizer securityCustomizer() {
 		return web -> web.ignoring().requestMatchers(
 				"/swagger-ui/**", // Swagger UI
-				"/api-docs/**", // API documentation
-				"/wssai/**"  // WebSocket endpoint (handshake anónimo)
+				"/api-docs/**" // API documentation
+				/*"/wssai/**" */ // WebSocket endpoint (handshake anónimo)
 		);
     }
 }

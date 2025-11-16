@@ -26,7 +26,7 @@ public class SendEmailRequestDTO {
 	@NotNull(message = "El tipo de email es obligatorio")
 	private EmailType emailType;
 
-	private Map<String, String> templateParameters = new HashMap<>();
+	private Map<String, String> templateParameters;
 
 	private String customSubject;
 }

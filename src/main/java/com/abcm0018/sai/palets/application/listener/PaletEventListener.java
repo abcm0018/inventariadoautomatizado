@@ -1,10 +1,15 @@
 package com.abcm0018.sai.palets.application.listener;
 
+import java.util.Set;
+
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.user.SimpSubscription;
+import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.abcm0018.sai.palets.application.dtos.PaletNotificationDTO;
+import com.abcm0018.sai.palets.application.mappers.PaletMapper;
 import com.abcm0018.sai.palets.domain.PaletCreatedEvent;
 import com.abcm0018.sai.palets.domain.entity.Palet;
 import com.abcm0018.sai.palets.domain.repository.PaletRepository;
@@ -27,8 +32,13 @@ public class PaletEventListener {
 	// Objeto de Spring para enviar mensajes STOMP
 	private final SimpMessagingTemplate messagingTemplate;
 
+	// Inyectamos el registro de usuarios y suscripciones de STOMP
+	private final SimpUserRegistry simpUserRegistry;
+
 	// Necesitamos el repositorio para buscar los datos completos del palet
 	private final PaletRepository paletRepository;
+
+	private final PaletMapper paletMapper;
 
 	// El "Destino" (Topic) al que enviaremos los mensajes
 	// Debe coincidir con el prefijo del bróker en WebSocketConfig
@@ -40,6 +50,18 @@ public class PaletEventListener {
 	// Sin que ocurra un 'LazyInitializationException'
 	public void handlePaletCreatedEvent(PaletCreatedEvent event) {
 
+		Set<SimpSubscription> subscriptionsForTopic = simpUserRegistry
+				.findSubscriptions(subscription -> subscription.getDestination().equals(WS_DESTINATION_TOPIC));
+
+		if (subscriptionsForTopic.isEmpty()) {
+			log.info("📢 Evento 'Palet creado' ID: {}. No hay clientes conectados a {}. Omitiendo envío de WebSocket.",
+					event.getPaletId(), WS_DESTINATION_TOPIC);
+
+			// Salimos. No se hace NADA MÁS.
+			// Esto ahorra la consulta a la BD y el envío.
+			return;
+		}
+
 		log.info("📡 Evento 'Palet creado' recibido. ID: {}. Preparando notificación WebSocket...", event.getPaletId());
 
 		// 1. Buscamos el palet (con la consulta optimizada)
@@ -48,7 +70,7 @@ public class PaletEventListener {
 					.ifPresentOrElse(
 							palet -> {
 								// 2. Creamos el DTO de notificación
-								PaletNotificationDTO notification = buildNotificationDTO(palet);
+								PaletNotificationDTO notification = paletMapper.toResponsePaletNotification(palet);
 								messagingTemplate.convertAndSend(WS_DESTINATION_TOPIC, notification);
 							}, () -> {
 								log.warn("El evento de 'Palet creado' no pudo ser procesado. Palet no encontrado. ID: {}", event.getPaletId());
