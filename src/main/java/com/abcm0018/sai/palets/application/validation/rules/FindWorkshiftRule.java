@@ -30,7 +30,7 @@ public class FindWorkshiftRule implements PaletValidationRule {
 	public void validate(PaletValidationContext context) throws PaletValidationException {
 
 		final String employeeNumber = context.getMessage().getEmployeeNumber();
-		final LocalDate scanDate = context.getMessage().getScanDate();
+		final LocalDate scanDate = context.getMessage().getScanDate().toLocalDate();
 
 		log.debug("Regla [Workshift]: Buscando turno para Empleado '{}' en fecha '{}'", employeeNumber, scanDate);
 

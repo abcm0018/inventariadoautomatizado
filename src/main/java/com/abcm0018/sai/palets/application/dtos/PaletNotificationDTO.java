@@ -2,6 +2,7 @@ package com.abcm0018.sai.palets.application.dtos;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.abcm0018.sai.productos.domain.enums.PackingLevel;
 import com.abcm0018.sai.shift.domain.enums.ShiftType;
@@ -38,7 +39,7 @@ public class PaletNotificationDTO {
 	private String dimensionsMm;      // (De ProductPackLevel) Ej: "1200x800x1000"
 
 	// --- (Trazabilidad) ---
-	private LocalDate scannedAt;    // (De Palet) El timestamp exacto del escaneo
+	private LocalDateTime scannedAt;    // (De Palet) El timestamp exacto del escaneo
 	private LocalDate packagingDate;  // (De Palet) Fecha de envasado
 	private LocalDate productUseByDate; // (De Palet) Fecha de CADUCIDAD
 	private boolean isExpired;        // (De Palet) Flag de conveniencia

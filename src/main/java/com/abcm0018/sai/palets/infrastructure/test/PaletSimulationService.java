@@ -72,7 +72,7 @@ public class PaletSimulationService {
 		// Usamos los datos VALIDOS de tu BBDD
 		paletData.setEan(VALID_EAN_IN_DB);
 		paletData.setEmployeeNumber(VALID_EMPLOYEE_IN_DB);
-		paletData.setScanDate(VALID_SHIFT_DATE); // Usamos la fecha válida
+		paletData.setScanDate(VALID_SHIFT_DATE.atStartOfDay()); // Usamos la fecha válida
 
 		// Fechas relativas
 		paletData.setPackagingDate(VALID_SHIFT_DATE.minusDays(1));

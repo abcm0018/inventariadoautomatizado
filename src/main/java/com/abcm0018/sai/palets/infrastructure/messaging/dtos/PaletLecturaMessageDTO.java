@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * DTO que representa el mensaje JSON recibido de RabbitMQ.
@@ -44,5 +45,5 @@ public class PaletLecturaMessageDTO {
 	 * Se usará para determinar el turno de trabajo.
 	 */
 	@NotNull(message = "La fecha de escaneo no puede ser nula.")
-	private LocalDate scanDate;
+	private LocalDateTime scanDate;
 }

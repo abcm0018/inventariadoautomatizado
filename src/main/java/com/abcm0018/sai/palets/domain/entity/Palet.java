@@ -123,7 +123,7 @@ public class Palet {
 	 * Fecha en la que el operador escaneó el palet
 	 */
 	@Column(name = "SCANNED_AT", nullable = false)
-	private LocalDate scannedAt;
+	private LocalDateTime scannedAt;
 
 	/**
 	 * Timestamp de creación del registro
@@ -140,7 +140,7 @@ public class Palet {
     private LocalDateTime updatedAt;
 
 	public static Palet createNewPalet(String sscc, String batchNumber, ProductPackLevel packLevel,
-			LocalDate packagingDate, LocalDate productUseByDate, String productionTime, LocalDate scannedAt, User user, Workshift workshift) {
+			LocalDate packagingDate, LocalDate productUseByDate, String productionTime, LocalDateTime scannedAt, User user, Workshift workshift) {
 
 		// Validación de los Datos críticos
 		if (sscc == null || user == null || workshift == null || packLevel == null) {
