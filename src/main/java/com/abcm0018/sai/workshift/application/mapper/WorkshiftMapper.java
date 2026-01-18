@@ -1,7 +1,5 @@
 package com.abcm0018.sai.workshift.application.mapper;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.mapstruct.Mapper;
@@ -58,13 +56,4 @@ public interface WorkshiftMapper {
 	@Mapping(target = "fullName", expression = "java(user.getFullName())")
 	WorkshiftResponseDTO.EmployeeInfo toEmployeeInfo(User user);
 
-	/**
-	 * Formatea un LocalTime a String HH:mm
-	 */
-	default String formatTime(LocalTime time) {
-		if (time == null) {
-			return null;
-		}
-		return time.format(DateTimeFormatter.ofPattern("HH:mm"));
-	}
 }
