@@ -3,6 +3,7 @@ package com.abcm0018.sai.workshift.application.scheduler;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
@@ -11,7 +12,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.abcm0018.sai.users.domain.entity.User;
 import com.abcm0018.sai.workshift.domain.entity.Workshift;
 import com.abcm0018.sai.workshift.domain.repository.WorkshiftRepository;
 
@@ -44,7 +44,7 @@ public class WorkshiftCacheScheduler {
 	public void preloadTodayWorkshifts() {
 		log.info("╔══════════════════════════════════════════════════════════════╗");
 		log.info("║   INICIANDO PRE-CARGA DE WORKSHIFTS DEL DÍA EN REDIS         ║");
-		log.info("║   Fecha/Hora: {}                                             ║", java.time.LocalDateTime.now());
+		log.info("║   Fecha/Hora: {}                                             ║", LocalDateTime.now());
 		log.info("╚══════════════════════════════════════════════════════════════╝");
 
 		try {
@@ -55,8 +55,8 @@ public class WorkshiftCacheScheduler {
 			List<Workshift> todayWorkshifts = workshiftRepository.findByDate(today);
 
 			if (todayWorkshifts.isEmpty()) {
-				log.warn("⚠️ No se encontraron workshifts para la fecha: {}", today);
-				log.warn("⚠️ Asegúrate de que el generador semanal se ejecutó correctamente");
+				log.warn("No se encontraron workshifts para la fecha: {}", today);
+				log.warn("Asegúrate de que el generador semanal se ejecutó correctamente");
 				return;
 			}
 
@@ -116,7 +116,7 @@ public class WorkshiftCacheScheduler {
 	 */
 	@Scheduled(cron = "0 30 0 * * ?", zone = "Europe/Madrid")
 	public void cleanYesterdayCache() {
-		log.info("🧹 Limpiando caché de workshifts del día anterior...");
+		log.info("Limpiando caché de workshifts del día anterior...");
 
 		try {
 			LocalDate yesterday = LocalDate.now().minusDays(1);
@@ -135,10 +135,10 @@ public class WorkshiftCacheScheduler {
 				}
 			}
 
-			log.info("✅ Limpieza completada - {} claves eliminadas", deleted);
+			log.info("Limpieza completada - {} claves eliminadas", deleted);
 
 		} catch (Exception e) {
-			log.error("❌ Error durante la limpieza de caché", e);
+			log.error("Error durante la limpieza de caché", e);
 		}
 	}
 
@@ -148,7 +148,7 @@ public class WorkshiftCacheScheduler {
 	 */
 	@Transactional
 	public void forcePreload() {
-		log.info("🔄 Pre-carga manual forzada (HOY + PRÓXIMA SEMANA)");
+		log.info("Pre-carga manual forzada (HOY + PRÓXIMA SEMANA)");
 
 		// 1. Carga los de hoy
 		doPreloadForDateRange(LocalDate.now(), LocalDate.now(), CACHE_TTL);

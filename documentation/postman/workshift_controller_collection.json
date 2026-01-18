@@ -1,9 +1,9 @@
 {
   "info": {
     "name": "Inventario Automatizado - Workshifts API",
-    "description": "Colección de endpoints para gestionar las asignaciones de turnos (Workshifts).",
+    "description": "Colección completa de endpoints para gestión de asignaciones de turnos (Workshifts). NOTA: La planificación automática se ejecuta mediante CRON cada viernes a las 18:00.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "1.1.0"
+    "version": "2.0.0"
   },
   "auth": {
     "type": "bearer",
@@ -17,11 +17,11 @@
   },
   "item": [
     {
-      "name": "Workshift Management (CRUD Admin)",
-      "description": "Operaciones CRUD manuales y EXCEPCIONALES para gestionar asignaciones de turnos. Requiere rol ADMIN.",
+      "name": "Workshift Management (CRUD)",
+      "description": "Operaciones CRUD básicas. SOLO para correcciones administrativas.",
       "item": [
         {
-          "name": "Create Workshift (EXCEPCIONAL)",
+          "name": "Create Workshifts (POST)",
           "request": {
             "method": "POST",
             "header": [
@@ -32,46 +32,19 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": 1,\n  \"shiftId\": 1,\n  \"date\": \"2025-10-28\",\n  \"reason\": \"Creación manual excepcional por motivo administrativo.\"\n}"
+              "raw": "{\n  \"startDate\": \"2025-02-01\",\n  \"endDate\": \"2025-02-07\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/workshifts",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workshifts"]
             },
-            "description": "Crear asignación de turno (EXCEPCIONAL). Requiere rol ADMIN."
+            "description": "Crea turnos para un rango de fechas. SOLO para correcciones administrativas. Requiere rol ADMIN o SUPERVISOR."
           },
           "response": []
         },
         {
-          "name": "Get Workshift by ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/{{workshiftId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "{{workshiftId}}"
-              ]
-            },
-            "description": "Obtener detalles de un Workshift por ID"
-          },
-          "response": []
-        },
-        {
-          "name": "Update Workshift (EXCEPCIONAL)",
+          "name": "Update Workshift (PUT)",
           "request": {
             "method": "PUT",
             "header": [
@@ -82,136 +55,114 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": 1,\n  \"shiftId\": 2,\n  \"date\": \"2025-10-28\",\n  \"reason\": \"Actualización manual excepcional para corregir turno.\"\n}"
+              "raw": "{\n  \"userId\": 2,\n  \"shiftId\": 3,\n  \"date\": \"2025-02-15\",\n  \"reason\": \"Cambio por solicitud del empleado - enfermedad\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/workshifts/{{workshiftId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "{{workshiftId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workshifts", "{{workshiftId}}"]
             },
-            "description": "Actualizar asignación de turno (EXCEPCIONAL). Requiere rol ADMIN."
+            "description": "Actualiza un turno manualmente. SOLO para correcciones administrativas. El campo 'reason' es obligatorio. Requiere rol ADMIN o SUPERVISOR."
           },
           "response": []
         },
         {
-          "name": "Delete Workshift (Admin)",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/{{workshiftId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "{{workshiftId}}"
-              ]
-            },
-            "description": "Eliminar un workshift por ID (EXCEPCIONAL). Requiere rol ADMIN."
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Workshift Planning & Generation",
-      "description": "Endpoints de alto nivel para la planificación y limpieza de turnos.",
-      "item": [
-        {
-          "name": "Generate Next Week's Schedule",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/planning/generate-next-week",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "planning",
-                "generate-next-week"
-              ]
-            },
-            "description": "Generar planificación de la próxima semana (MANUAL - SOLO TESTING)\nADVERTENCIA: En producción esto se ejecuta automáticamente con CRON."
-          },
-          "response": []
-        },
-        {
-          "name": "Cleanup Old Workshifts (Admin)",
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/cleanup",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "cleanup"
-              ]
-            },
-            "description": "Elimina turnos con más de 12 meses de antigüedad. Requiere rol ADMIN."
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "Workshift Query & Search",
-      "description": "Endpoints para consultar, buscar y filtrar asignaciones de turnos.",
-      "item": [
-        {
-          "name": "Get All Workshifts (Paginated)",
+          "name": "Get Workshift by ID (GET)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts?page=0&size=10&sort=date,desc",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts"
-              ],
+              "raw": "{{baseUrl}}/api/v1/workshifts/{{workshiftId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workshifts", "{{workshiftId}}"]
+            },
+            "description": "Obtiene un turno específico por su ID con información detallada."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Workshift (DELETE)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/workshifts/{{workshiftId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workshifts", "{{workshiftId}}"]
+            },
+            "description": "Elimina un turno. Solo se puede eliminar si no tiene palets ni fichajes asociados. Requiere rol ADMIN."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Search & Filters",
+      "description": "Búsqueda y filtrado de turnos con múltiples criterios.",
+      "item": [
+        {
+          "name": "Search with Query Params (GET /search)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/workshifts/search?userId=1&shiftType=MORNING&startDate=2025-02-01&endDate=2025-02-28&page=0&size=20&sort=date,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workshifts", "search"],
               "query": [
+                {
+                  "key": "userId",
+                  "value": "1",
+                  "description": "Opcional. ID del usuario"
+                },
+                {
+                  "key": "shiftId",
+                  "value": "2",
+                  "description": "Opcional. ID del shift",
+                  "disabled": true
+                },
+                {
+                  "key": "shiftType",
+                  "value": "MORNING",
+                  "description": "Opcional. Tipo de turno: MORNING, AFTERNOON, NIGHT"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2025-02-01",
+                  "description": "Opcional. Fecha de inicio (ISO DATE)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-02-28",
+                  "description": "Opcional. Fecha de fin (ISO DATE)"
+                },
+                {
+                  "key": "hasClockings",
+                  "value": "true",
+                  "description": "Opcional. Filtrar por turnos con/sin fichajes",
+                  "disabled": true
+                },
                 {
                   "key": "page",
                   "value": "0"
                 },
                 {
                   "key": "size",
-                  "value": "10"
+                  "value": "20"
                 },
                 {
                   "key": "sort",
-                  "value": "date,desc"
+                  "value": "date,desc",
+                  "description": "Ordenado por fecha descendente por defecto"
                 }
               ]
             },
-            "description": "Obtener todos los workshifts (paginado)"
+            "description": "Búsqueda de turnos usando query parameters. Permite filtrar por operario, fecha, tipo, etc. Soporta paginación y ordenamiento."
           },
           "response": []
         },
         {
-          "name": "Filter Workshifts (Paginated)",
+          "name": "Advanced Search with Body (POST /search)",
           "request": {
             "method": "POST",
             "header": [
@@ -222,19 +173,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": {{userId}},\n  \"shiftType\": \"MORNING\",\n  \"startDate\": \"2025-10-01\",\n  \"endDate\": \"2025-10-31\",\n  \"isPast\": false\n}"
+              "raw": "{\n  \"userId\": 1,\n  \"shiftId\": 2,\n  \"shiftType\": \"MORNING\",\n  \"startDate\": \"2025-02-01\",\n  \"endDate\": \"2025-02-28\",\n  \"hasClockings\": true\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/filter?page=0&size=20",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "filter"
-              ],
+              "raw": "{{baseUrl}}/api/v1/workshifts/search?page=0&size=20&sort=date,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workshifts", "search"],
               "query": [
                 {
                   "key": "page",
@@ -243,217 +187,86 @@
                 {
                   "key": "size",
                   "value": "20"
-                }
-              ]
-            },
-            "description": "Buscar y filtrar workshifts con paginación"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Workshifts by User ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/user/{{userId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "user",
-                "{{userId}}"
-              ]
-            },
-            "description": "Obtener turnos por ID de Usuario (paginado)"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Workshifts by Date",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/date?exactDate=2025-10-28",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "date"
-              ],
-              "query": [
-                {
-                  "key": "exactDate",
-                  "value": "2025-10-28"
-                }
-              ]
-            },
-            "description": "Obtener turnos para una fecha específica"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Workshifts by Date Range",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/date-range?startDate=2025-10-01&endDate=2025-10-31",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "date-range"
-              ],
-              "query": [
-                {
-                  "key": "startDate",
-                  "value": "2025-10-01"
                 },
                 {
-                  "key": "endDate",
-                  "value": "2025-10-31"
+                  "key": "sort",
+                  "value": "date,desc"
                 }
               ]
             },
-            "description": "Obtener turnos por rango de fechas"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Today's Workshifts",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/today",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "today"
-              ]
-            },
-            "description": "Obtener turnos para hoy"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Workshifts by Shift Type",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/shift-type?type=MORNING",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "shift-type"
-              ],
-              "query": [
-                {
-                  "key": "type",
-                  "value": "MORNING"
-                }
-              ]
-            },
-            "description": "Obtener turnos por tipo de turno (ShiftType)"
-          },
-          "response": []
-        },
-        {
-          "name": "Check for Conflicts",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/check-conflicts?userId={{userId}}&date=2025-10-28&excludeId=0",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "check-conflicts"
-              ],
-              "query": [
-                {
-                  "key": "userId",
-                  "value": "{{userId}}"
-                },
-                {
-                  "key": "date",
-                  "value": "2025-10-28"
-                },
-                {
-                  "key": "excludeId",
-                  "value": "0",
-                  "description": "(Opcional) ID de Workshift a excluir de la comprobación (para actualizaciones)"
-                }
-              ]
-            },
-            "description": "Verificar conflictos de asignación (ej. duplicados)"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Statistics",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/statistics?startDate=2025-01-01&endDate=2025-12-31",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "workshifts",
-                "statistics"
-              ],
-              "query": [
-                {
-                  "key": "startDate",
-                  "value": "2025-01-01",
-                  "description": "(Opcional)"
-                },
-                {
-                  "key": "endDate",
-                  "value": "2025-12-31",
-                  "description": "(Opcional)"
-                }
-              ]
-            },
-            "description": "Obtener estadísticas agregadas de workshifts"
+            "description": "Búsqueda avanzada combinando múltiples criterios en el body. Todos los filtros son opcionales y se pueden combinar."
           },
           "response": []
         }
       ]
-    }
-  ],
-  "variable": [
+    },
     {
-      "key": "workshiftId",
-      "value": "1"
+      "name": "User Workshifts",
+      "description": "Consulta de turnos específicos de usuarios.",
+      "item": [
+        {
+          "name": "Get User Today Workshift (GET /user/{userId}/today)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/workshifts/user/{{userId}}/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workshifts", "user", "{{userId}}", "today"]
+            },
+            "description": "Obtiene el turno de hoy de un usuario específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Next Workshift (GET /user/{userId}/next)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/workshifts/user/{{userId}}/next",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workshifts", "user", "{{userId}}", "next"]
+            },
+            "description": "Obtiene el próximo turno de un usuario."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Schedule Generation & Maintenance",
+      "description": "Generación automática y mantenimiento de planificaciones.",
+      "item": [
+        {
+          "name": "Generate Next Week Schedule (POST /generate-schedule)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/workshifts/generate-schedule",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workshifts", "generate-schedule"]
+            },
+            "description": "⚠️ SOLO PARA TESTING O EMERGENCIAS. Genera planificación de la próxima semana manualmente. En producción esto se ejecuta automáticamente con CRON cada viernes a las 18:00. Requiere rol ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Clean Old Workshifts (DELETE /cleanup)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/workshifts/cleanup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "workshifts", "cleanup"]
+            },
+            "description": "Elimina turnos con más de 12 meses de antigüedad. Requiere rol ADMIN."
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }

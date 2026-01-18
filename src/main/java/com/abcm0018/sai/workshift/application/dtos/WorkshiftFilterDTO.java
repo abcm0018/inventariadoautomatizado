@@ -15,22 +15,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WorkshiftFilterDTO {
-
 	private Long userId;
-
 	private Long shiftId;
-
 	private String shiftType;
-
 	private LocalDate startDate;
-
 	private LocalDate endDate;
-
 	private LocalDate exactDate;
-
 	private Boolean isPast;
-
 	private Boolean isFuture;
-
 	private Boolean isToday;
 }

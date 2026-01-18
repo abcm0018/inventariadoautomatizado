@@ -11,6 +11,7 @@ import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -64,4 +65,18 @@ public class WorkshiftExceptionControllerAdvice {
 		HttpStatus status = HttpStatus.BAD_REQUEST;
 		return new ResponseEntity<>(ResponseBuilder.withErrors(status, errors, status.getReasonPhrase()), status);
     }
+
+	/**
+	 * Handles exceptions of type {@link PropertyReferenceException} that are thrown during
+	 * the sorting process, typically due to an invalid property reference in a query or request.
+	 * Logs the error and constructs a response with appropriate error information.
+	 *
+	 * @param ex the {@link PropertyReferenceException} instance containing details of the error.
+	 * @return a {@link StandardResponse} of type Void containing error details and HTTP status information.
+	 */
+	@ExceptionHandler(PropertyReferenceException.class)
+	public StandardResponse<Void> handleSortError(PropertyReferenceException ex){
+		String cleanMessage = String.format("Solicitud incorrecta: El campo de ordenamiento '%s' no es válido para la consulta", ex.getPropertyName());
+		return ResponseBuilder.withError(HttpStatus.BAD_REQUEST, null, cleanMessage);
+	}
 }

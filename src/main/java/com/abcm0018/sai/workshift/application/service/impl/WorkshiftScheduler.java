@@ -42,12 +42,6 @@ public class WorkshiftScheduler {
 
 			// TODO: Enviar alerta por email a administradores
 			// emailService.notifySchedulingCreation();
-
-			log.info("╔════════════════════════════════════════════════════════════════╗");
-			log.info("║   ✓ GENERACIÓN DE TURNOS COMPLETADA EXITOSAMENTE             ║");
-			log.info("╚════════════════════════════════════════════════════════════════╝");
-
-
 		} catch (Exception e) {
 			log.error("╔════════════════════════════════════════════════════════════════╗");
 			log.error("║   ✗ ERROR EN LA GENERACIÓN DE TURNOS                         ║");
@@ -57,6 +51,10 @@ public class WorkshiftScheduler {
 			// TODO: Enviar alerta por email a administradores
 			// emailService.notifySchedulingFailure(excepcion);
 		}
+
+		log.info("╔════════════════════════════════════════════════════════════════╗");
+		log.info("║   ✓ GENERACIÓN DE TURNOS COMPLETADA EXITOSAMENTE             ║");
+		log.info("╚════════════════════════════════════════════════════════════════╝");
 	}
 
 	/**

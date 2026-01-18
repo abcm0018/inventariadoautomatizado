@@ -54,7 +54,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 		registry.addEndpoint("/wssai")
 				// Permite conexiones desde cualquier origen
 				// En producción se debe restringir a la URL del frontend
-				.setAllowedOrigins("http://localhost:63342/")
+				.setAllowedOriginPatterns("*")
 				.withSockJS();
 	}
 

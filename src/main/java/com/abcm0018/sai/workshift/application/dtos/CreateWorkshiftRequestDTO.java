@@ -2,40 +2,21 @@ package com.abcm0018.sai.workshift.application.dtos;
 
 import java.time.LocalDate;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-/**
- * DTO para crear una asignación de turno excepcional
- * NOTA: La creación manual de turnos es EXCEPCIONAL
- * La planificación normal se hace automáticamente con el cron
- */
-@Data
-@Builder
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class CreateWorkshiftRequestDTO {
+	@NotNull(message = "La fecha de inicio es obligatoria")
+	@FutureOrPresent(message = "La fecha de inicio debe ser hoy o futura")
+	private LocalDate fromDate;
 
-	@NotNull(message = "El ID del usuario es obligatorio")
-	@Positive(message = "El ID del usuario debe ser positivo")
-	private Long userId;
-
-	@NotNull(message = "El ID del turno (shift) es obligatorio")
-	@Positive(message = "El ID del turno debe ser positivo")
-	private Long shiftId;
-
-	@NotNull(message = "La fecha es obligatoria")
-	@PastOrPresent(message = "La fecha no puede ser futura")
-	private LocalDate date;
-
-	@NotBlank(message = "El motivo de la creación manual es obligatorio")
-	@Size(min = 10, max = 500, message = "El motivo debe tener entre 10 y 500 caracteres")
-	private String reason;
+	@NotNull(message = "La fecha fin es obligatoria")
+	@FutureOrPresent(message = "La fecha de fin debe ser hoy o futura")
+	private LocalDate toDate;
 }

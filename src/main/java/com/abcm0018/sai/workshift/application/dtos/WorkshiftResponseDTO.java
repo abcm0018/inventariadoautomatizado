@@ -3,7 +3,7 @@ package com.abcm0018.sai.workshift.application.dtos;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,8 +14,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO de respuesta básica para Workshift
- * Incluye información principal sin anidar entidades completas
+ * DTO ÚNICO para respuestas de Workshift.
+ * Se usa tanto para listados (Page) como para detalles individuales (findById).
+ * Diseño optimizado: Ligero pero estructurado.
  */
 @Data
 @Builder
@@ -23,71 +24,58 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class WorkshiftResponseDTO implements Serializable {
 
-	@Serial
-	private static final long serialVersionUID = 1L;
+	@Serial private static final long serialVersionUID = 1L;
 
 	private Long id;
 
-	@JsonProperty(value = "date")
+	@JsonProperty("date")
 	@JsonFormat(pattern = "yyyy-MM-dd")
 	private LocalDate date;
 
-	// Información del turno (shift)
-	@JsonProperty(value = "shift_id")
-	private Long shiftId;
+	@JsonProperty("shift")
+	private ShiftInfo shift;
 
-	@JsonProperty(value = "shift_type")
-	private String shiftType;
+	@JsonProperty("user")
+	private EmployeeInfo user;
 
-	@JsonProperty(value = "shift_description")
-	private String shiftDescription;
+	// Obligatorio para Optimistic Locking
+	@JsonProperty("version")
+	private Long version;
 
-	@JsonProperty(value = "start_time")
-	private String startTime;
+	@Data
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class ShiftInfo implements Serializable {
+		@Serial private static final long serialVersionUID = 1L;
 
-	@JsonProperty(value = "end_time")
-	private String endTime;
+		private Long id;
 
-	// Información del usuario
-	@JsonProperty(value = "user_id")
-	private Long userId;
+		@JsonProperty("name")
+		private String name;
 
-	@JsonProperty(value = "employee_number")
-	private String employeeNumber;
+		@JsonProperty("start_time")
+		@JsonFormat(pattern = "HH:mm")
+		private LocalTime startTime;
 
-	@JsonProperty(value = "user_full_name")
-	private String userFullName;
+		@JsonProperty("end_time")
+		@JsonFormat(pattern = "HH:mm")
+		private LocalTime endTime;
+	}
 
-	@JsonProperty(value = "job_position")
-	private String jobPosition;
+	@Data
+	@Builder
+	@NoArgsConstructor
+	@AllArgsConstructor
+	public static class EmployeeInfo implements Serializable {
+		@Serial private static final long serialVersionUID = 1L;
 
-	// Estadísticas
-	@JsonProperty(value = "total_scanned_palets")
-	private Integer totalScannedPalets;
+		private Long id;
 
-	@JsonProperty(value = "total_timesheets")
-	private Integer totalTimesheets;
+		@JsonProperty("employee_number")
+		private String employeeNumber;
 
-	// Campos calculados
-	@JsonProperty(value = "is_today")
-	private Boolean isToday;
-
-	@JsonProperty(value = "is_past")
-	private Boolean isPast;
-
-	@JsonProperty(value = "is_future")
-	private Boolean isFuture;
-
-	@JsonProperty(value = "has_been_updated")
-	private Boolean hasBeenUpdated;
-
-	// Auditoría
-	@JsonProperty(value = "created_at")
-	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-	private LocalDateTime createdAt;
-
-	@JsonProperty(value = "updated_at")
-	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-	private LocalDateTime updatedAt;
+		@JsonProperty("full_name")
+		private String fullName;
+	}
 }
-

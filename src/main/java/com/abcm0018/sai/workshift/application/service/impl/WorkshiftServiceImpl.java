@@ -3,13 +3,16 @@ package com.abcm0018.sai.workshift.application.service.impl;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -17,8 +20,9 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,17 +36,14 @@ import com.abcm0018.sai.users.domain.entity.User;
 import com.abcm0018.sai.users.domain.enums.Role;
 import com.abcm0018.sai.users.domain.repository.UserRepository;
 import com.abcm0018.sai.workshift.application.dtos.CreateWorkshiftRequestDTO;
+import com.abcm0018.sai.workshift.application.dtos.PlanningContext;
 import com.abcm0018.sai.workshift.application.dtos.UpdateWorkshiftRequestDTO;
-import com.abcm0018.sai.workshift.application.dtos.WeeklyScheduleResponseDTO;
-import com.abcm0018.sai.workshift.application.dtos.WorkshiftConflictDTO;
-import com.abcm0018.sai.workshift.application.dtos.WorkshiftDetailResponseDTO;
 import com.abcm0018.sai.workshift.application.dtos.WorkshiftFilterDTO;
 import com.abcm0018.sai.workshift.application.dtos.WorkshiftResponseDTO;
-import com.abcm0018.sai.workshift.application.dtos.WorkshiftStatisticsDTO;
-import com.abcm0018.sai.workshift.application.dtos.WorkshiftSummaryDTO;
 import com.abcm0018.sai.workshift.application.mapper.WorkshiftMapper;
 import com.abcm0018.sai.workshift.domain.entity.Workshift;
 import com.abcm0018.sai.workshift.domain.repository.WorkshiftRepository;
+import com.abcm0018.sai.workshift.domain.specifications.WorkshiftSpecificationBuilder;
 import com.abcm0018.sai.workshift.exceptions.WorkshiftServiceException;
 import com.abcm0018.sai.workshift.application.service.WorkshiftService;
 
@@ -58,6 +59,7 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 	private final ShiftRepository shiftRepository;
 	private final WorkshiftMapper workshiftMapper;
 	private final WorkshiftRepository workshiftRepository;
+	private final WorkshiftSpecificationBuilder specificationBuilder;
 
 	private final RedisTemplate<String, Long> workshiftRedisTemplate;
 
@@ -70,46 +72,36 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 
 	@Override
 	@Transactional
-	@Caching(evict = {
-			@CacheEvict(value = "workshifts", allEntries = true),
-			@CacheEvict(value = "workshiftsByUser", allEntries = true),
-			@CacheEvict(value = "workshiftsByDate", allEntries = true)
-	})
-	public WorkshiftDetailResponseDTO createExceptionalWorkshift(CreateWorkshiftRequestDTO requestDTO) {
-		log.warn("Creando turno EXCEPCIONAL - Usuario: {}, Fecha: {}, Motivo: {}", requestDTO.getUserId(), requestDTO.getDate(), requestDTO.getReason());
+	public Integer generateWorkshiftSchedule(CreateWorkshiftRequestDTO requestDTO) {
 
-		// Validar motivo obligatorio
-		if (StringUtils.isEmpty(requestDTO.getReason())) {
-			throw new WorkshiftServiceException(CustomErrorCode.BAD_REQUEST, "Debe proporcionar un motivo para crear un turno de forma manual", HttpStatus.BAD_REQUEST);
+		if (Objects.isNull(requestDTO)) {
+			throw new WorkshiftServiceException(CustomErrorCode.BAD_REQUEST, "Fecha inicio y fecha fin son obligatorias", HttpStatus.BAD_REQUEST);
 		}
 
-		// Obtener usuario y shift
-		User user = getUserEntityById(requestDTO.getUserId());
-		Shift shift = getShift(requestDTO.getShiftId());
-
-		// Validaciones de negocio
-		validateWorkshiftCreation(user, shift);
-
-		// Verificar conflictos (solo advertencia)
-		WorkshiftConflictDTO conflicts = checkConflicts(requestDTO.getUserId(), requestDTO.getDate(), null);
-
-		if (conflicts.getHasConflicts()) {
-			log.warn("ADVERTENCIA: {}", conflicts.getMessage());
+		if (requestDTO.getFromDate().isAfter(requestDTO.getToDate())) {
+			throw new WorkshiftServiceException(CustomErrorCode.BAD_REQUEST, "Fecha inicio no puede ser mayor a fecha fin", HttpStatus.BAD_REQUEST);
 		}
 
-		// Crear workshift
-		Workshift workshift = workshiftMapper.toWorkshift(requestDTO);
-		workshift.setUser(user);
-		workshift.setShift(shift);
+		log.info("Preparando el contexto de planificación con fecha inicio {}  y fecha fin: {}", requestDTO.getFromDate(), requestDTO.getToDate());
 
-		Workshift saved = workshiftRepository.save(workshift);
+		// 1. Preparar contexto
+		PlanningContext context = preparePlanningContext(requestDTO.getFromDate(), requestDTO.getToDate());
 
-		log.info("Turno excepcional creado - ID: {} | Motivo: {}", saved.getId(), requestDTO.getReason());
+		log.info("Planificando turnos para {} operarios usando para {} tipos de turnos.",
+				context.getOperators().size(), context.getActiveShifts().size());
 
-		// TODO: Notificar al usuario y registrar en auditoría
-		// auditService.logExceptionalWorkshift(saved, requestDTO.getReason());
+		// 2. Calulamos los turnos a asignar
+		List<Workshift> workshiftsToSave = calculateRotation(context);
 
-		return workshiftMapper.toDetailResponse(saved);
+		// 3. Persistencia por Lotes (Batch)
+		if (!workshiftsToSave.isEmpty()) {
+			log.info("Guardando {} nuevos turnos...", workshiftsToSave.size());
+			workshiftRepository.saveAll(workshiftsToSave);
+			return workshiftsToSave.size();
+		}
+
+		log.warn("No se han generado asignaciones de turno para las fechas indicadas.");
+		return 0;
 	}
 
 	@Override
@@ -119,29 +111,39 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 			@CacheEvict(value = "workshiftsByUser", allEntries = true),
 			@CacheEvict(value = "workshiftsByDate", allEntries = true)
 	})
-	public WorkshiftDetailResponseDTO updateWorkshift(Long id, UpdateWorkshiftRequestDTO requestDTO) {
+	public WorkshiftResponseDTO updateWorkshift(Long id, UpdateWorkshiftRequestDTO requestDTO) {
 		log.warn("Actualizando workshift {} manualmente - Motivo: {}", id, requestDTO.getReason());
 
 		if (StringUtils.isEmpty(requestDTO.getReason())) {
-			throw new WorkshiftServiceException(CustomErrorCode.BAD_REQUEST, "Debe proporcionar un motivo para actualizar un turno de forma manual", HttpStatus.BAD_REQUEST);
+			throw new WorkshiftServiceException(
+					CustomErrorCode.BAD_REQUEST,
+					"Debe proporcionar un motivo para actualizar un turno de forma manual", HttpStatus.BAD_REQUEST);
 		}
 
 		Workshift workshift = getWorkshiftEntityById(id);
 
-		// Actualizar campos si vienen en el request
-		if (requestDTO.getUserId() != null) {
-			User newUser = getUserEntityById(requestDTO.getUserId());
-			validateNoConflict(newUser, requestDTO.getDate() != null ? requestDTO.getDate() : workshift.getDate(), id);
-			workshift.setUser(newUser);
+		// Check de concurrencia
+		// Comporamos la version de la BD con la versión que tenía el usuario en su pantalla
+		if (!workshift.getVersion().equals(requestDTO.getVersion())) {
+			throw new WorkshiftServiceException(CustomErrorCode.CONFLICT,
+					"El turno ha sido modificado por otro usuario miestras estabas editando",
+					HttpStatus.CONFLICT);
 		}
 
+		Shift newShift = null;
+
 		if (requestDTO.getShiftId() != null) {
-			Shift newShift = getShift(requestDTO.getShiftId());
+			newShift = shiftRepository
+					.findById(requestDTO.getShiftId())
+					.orElseThrow(() -> new WorkshiftServiceException(
+							CustomErrorCode.NOT_FOUND, "No se ha encontrado el turno", HttpStatus.NOT_FOUND)
+					);
+
 			workshift.setShift(newShift);
 		}
 
 		if (requestDTO.getDate() != null) {
-			validateNoConflict(workshift.getUser(), requestDTO.getDate(), id);
+			validateNoConflict(workshift.getUser(), requestDTO.getDate(), newShift, id);
 			workshift.setDate(requestDTO.getDate());
 		}
 
@@ -152,20 +154,14 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 		// TODO: Registrar en auditoría
 		// auditService.logWorkshiftUpdate(updated, requestDTO.getReason());
 
-		return workshiftMapper.toDetailResponse(updated);
+		return workshiftMapper.toResponse(updated);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	@Cacheable(value = "workshifts", key = "#id")
-	public WorkshiftDetailResponseDTO findById(Long id) {
-		return workshiftMapper.toDetailResponse(getWorkshiftEntityById(id));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public Page<WorkshiftSummaryDTO> findAll(Pageable pageable) {
-		return workshiftRepository.findAll(pageable).map(workshiftMapper::toSummary);
+	public WorkshiftResponseDTO findById(Long id) {
+		return workshiftMapper.toResponse(getWorkshiftEntityById(id));
 	}
 
 	@Override
@@ -175,314 +171,67 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 			@CacheEvict(value = "workshiftsByUser", allEntries = true),
 			@CacheEvict(value = "workshiftsByDate", allEntries = true)
 	})
-	public void deleteWorkshift(Long id) {
+	public int deleteWorkshift(Long id) {
 		log.info("Eliminando workshift {}", id);
-
-		Workshift workshift = getWorkshiftEntityById(id);
+		int total = 1;
+		Workshift workshift;
+		try {
+			workshift = getWorkshiftEntityById(id);
+		} catch (Exception e) {
+			if (e instanceof WorkshiftServiceException && ((WorkshiftServiceException) e).getHttpStatus() == HttpStatus.NOT_FOUND) {
+				return 0;
+			}
+			throw new RuntimeException(e);
+		}
 
 		// Validar que no tenga datos asociados
-		validateCanDelete(workshift);
+		if (workshift.getTotalTimesheets() > 0) {
+			String message = String.format("No se puede eliminar el turno porque tiene %d fichajes asociados", workshift.getTotalTimesheets());
+			throw new WorkshiftServiceException(CustomErrorCode.CONFLICT, message, HttpStatus.CONFLICT);
+		}
 
 		workshiftRepository.delete(workshift);
-
 		log.info("Workshift {} eliminado exitosamente", id);
+		return total;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	@Cacheable(value = "workshiftsByUser", key = "#userId")
-	public List<WorkshiftResponseDTO> findByUser(Long userId) {
-		User user = getUserEntityById(userId);
-		return workshiftMapper.toResponseList(workshiftRepository.findByUserOrderByDateDesc(user));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public Page<WorkshiftSummaryDTO> findByUserPaginated(Long userId, Pageable pageable) {
-		User user = getUserEntityById(userId);
-		return workshiftRepository.findByUser(user, pageable).map(workshiftMapper::toSummary);
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public WorkshiftDetailResponseDTO getTodayWorkshift(Long userId) {
+	public WorkshiftResponseDTO getTodayWorkshift(Long userId) {
 		User user = getUserEntityById(userId);
 		Workshift workshift = workshiftRepository.findTodayWorkshiftByUser(user, LocalDate.now())
 				.orElseThrow(() -> new WorkshiftServiceException(CustomErrorCode.NOT_FOUND, "El usuario no tiene turno asignado para hoy", HttpStatus.NOT_FOUND));
-		return workshiftMapper.toDetailResponse(workshift);
+		return workshiftMapper.toResponse(workshift);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findFutureWorkshifts(Long userId) {
+	public WorkshiftResponseDTO getNextWorkshift(Long userId) {
 		User user = getUserEntityById(userId);
-		return workshiftMapper.toResponseList(workshiftRepository.findFutureWorkshiftsByUser(user, LocalDate.now()));
+
+		List<Workshift> workshifts = workshiftRepository.findNextWorkshiftByUser(
+				user,
+				LocalDate.now(),
+				PageRequest.of(0, 1)
+		);
+
+		return workshifts.stream()
+				.findFirst()
+				.map(workshiftMapper::toResponse)
+				.orElse(null);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findPastWorkshifts(Long userId) {
-		User user = getUserEntityById(userId);
-		return workshiftMapper.toResponseList(workshiftRepository.findPastWorkshiftsByUser(user, LocalDate.now()));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public WorkshiftDetailResponseDTO getNextWorkshift(Long userId) {
-		User user = getUserEntityById(userId);
-		Workshift workshift = workshiftRepository.findNextWorkshiftByUser(user, LocalDate.now())
-				.orElseThrow(() -> new WorkshiftServiceException(CustomErrorCode.NOT_FOUND, "El usuario no tiene turnos futuros asignados", HttpStatus.NOT_FOUND));
-		return workshiftMapper.toDetailResponse(workshift);
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findByUserAndDateRange(Long userId, LocalDate startDate, LocalDate endDate) {
-		validateDateRange(startDate, endDate);
-		User user = getUserEntityById(userId);
-		return workshiftMapper.toResponseList(workshiftRepository.findByUserAndDateBetweenOrderByDateAsc(user, startDate, endDate));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public Long countWorkshiftsByUser(Long userId) {
-		User user = getUserEntityById(userId);
-		return workshiftRepository.countByUser(user);
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	@Cacheable(value = "workshiftsByDate", key = "#date")
-	public List<WorkshiftResponseDTO> findByDate(LocalDate date) {
-		return workshiftMapper.toResponseList(workshiftRepository.findByDate(date));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findTodayWorkshifts() {
-		return workshiftMapper.toResponseList(workshiftRepository.findByDate(LocalDate.now()));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findByDateRange(LocalDate startDate, LocalDate endDate) {
-		validateDateRange(startDate, endDate);
-		return workshiftMapper.toResponseList(workshiftRepository.findByDateBetweenOrderByDateAsc(startDate, endDate));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<Long> findUserIdsWorkingOnDate(LocalDate date) {
-		return workshiftRepository.findUsersWorkingOnDate(date).stream().map(User::getId).toList();
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public Long countWorkshiftsByDate(LocalDate date) {
-		return workshiftRepository.countByDate(date);
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findCurrentWeekWorkshifts() {
-		LocalDate today = LocalDate.now();
-		LocalDate startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-		LocalDate endOfWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
-
-		return workshiftMapper.toResponseList(workshiftRepository.findWorkshiftsOfWeek(startOfWeek, endOfWeek));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findCurrentMonthWorkshifts() {
-		LocalDate today = LocalDate.now();
-		LocalDate startOfMonth = today.with(TemporalAdjusters.firstDayOfMonth());
-		LocalDate endOfMonth = today.with(TemporalAdjusters.lastDayOfMonth());
-
-		return workshiftMapper.toResponseList(workshiftRepository.findWorkshiftsOfMonth(startOfMonth, endOfMonth));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findWorkshiftsOfWeek(LocalDate anyDayOfWeek) {
-		LocalDate startOfWeek = anyDayOfWeek.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-		LocalDate endOfWeek = anyDayOfWeek.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
-
-		return workshiftMapper.toResponseList(workshiftRepository.findWorkshiftsOfWeek(startOfWeek, endOfWeek));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findWorkshiftsOfMonth(int year, int month) {
-		LocalDate startOfMonth = LocalDate.of(year, month, 1);
-		LocalDate endOfMonth = startOfMonth.with(TemporalAdjusters.lastDayOfMonth());
-
-		return workshiftMapper.toResponseList(workshiftRepository.findWorkshiftsOfMonth(startOfMonth, endOfMonth));
-	}
-
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findByShift(Long shiftId) {
-		Shift shift = getShift(shiftId);
-		return workshiftMapper.toResponseList(workshiftRepository.findByShift(shift));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findByShiftType(ShiftType shiftType) {
-		return workshiftMapper.toResponseList(workshiftRepository.findByShiftType(shiftType));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<WorkshiftResponseDTO> findByUserAndShiftType(Long userId, ShiftType shiftType) {
-		return workshiftMapper.toResponseList(workshiftRepository.findByUserAndShiftType(getUserEntityById(userId), shiftType));
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public Page<WorkshiftSummaryDTO> findWithFilters(WorkshiftFilterDTO filterDTO, Pageable pageable) {
+	public Page<WorkshiftResponseDTO> findWithFilters(WorkshiftFilterDTO filterDTO, Pageable pageable) {
 		log.debug("Buscando workshifts con filtros: {}", filterDTO);
 
-		// Aplicar filtros progresivamente
-		List<Workshift> results = workshiftRepository.findAll();
+		// Construimos la consulta
+		Specification<Workshift> spec = specificationBuilder.buildFrom(filterDTO);
+		// Ejecutamos la consulta
+		Page<Workshift> workshifts = workshiftRepository.findAll(spec, pageable);
 
-		// Filtrar por usuario
-		if (filterDTO.getUserId() != null) {
-			User user = getUserEntityById(filterDTO.getUserId());
-			results = results.stream().filter(w -> w.getUser().getId().equals(user.getId())).toList();
-		}
-
-		// Filtrar por shift
-		if (filterDTO.getShiftId() != null) {
-			results = results.stream().filter(w -> w.getShift().getId().equals(filterDTO.getShiftId())).toList();
-		}
-
-		// Filtrar por tipo de turno
-		if (filterDTO.getShiftType() != null) {
-			ShiftType type = ShiftType.valueOf(filterDTO.getShiftType());
-			results = results.stream().filter(w -> w.getShift().getShiftType() == type).toList();
-		}
-
-		// Filtrar por fecha exacta
-		if (filterDTO.getExactDate() != null) {
-			results = results.stream().filter(w -> w.getDate().equals(filterDTO.getExactDate())).toList();
-		}
-
-		// Filtrar por rango de fechas
-		if (filterDTO.getStartDate() != null && filterDTO.getEndDate() != null) {
-			results = results.stream().filter(w -> !w.getDate().isBefore(filterDTO.getStartDate()) && !w.getDate().isAfter(filterDTO.getEndDate())).toList();
-		}
-
-		// Filtrar por estado temporal
-		if (Boolean.TRUE.equals(filterDTO.getIsToday())) {
-			results = results.stream().filter(w -> w.getDate().equals(LocalDate.now())).toList();
-		}
-		if (Boolean.TRUE.equals(filterDTO.getIsPast())) {
-			results = results.stream().filter(w -> w.getDate().isBefore(LocalDate.now())).toList();
-		}
-		if (Boolean.TRUE.equals(filterDTO.getIsFuture())) {
-			results = results.stream().filter(w -> w.getDate().isAfter(LocalDate.now())).toList();
-		}
-
-		// Convertir a Page
-		int start = (int) pageable.getOffset();
-		int end = Math.min((start + pageable.getPageSize()), results.size());
-		List<Workshift> pageContent = results.subList(start, end);
-
-		return new PageImpl<>(workshiftMapper.toSummaryList(pageContent), pageable, results.size());
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public WorkshiftConflictDTO checkConflicts(Long userId, LocalDate date, Long excludeId) {
-		User user = getUserEntityById(userId);
-		List<Workshift> existing = workshiftRepository.findPotentialConflicts(user, date);
-
-		// Excluir el workshift actual si se está actualizando
-		if (excludeId != null) {
-			existing = existing.stream().filter(w -> !w.getId().equals(excludeId)).toList();
-		}
-
-		WorkshiftConflictDTO.WorkshiftConflictDTOBuilder conflictBuilder = WorkshiftConflictDTO.builder()
-				.userId(userId)
-				.userFullName(user.getFullName())
-				.date(date)
-				.conflictingWorkshifts(workshiftMapper.toSummaryList(existing))
-				.warnings(new ArrayList<>());
-
-		if (!existing.isEmpty()) {
-			conflictBuilder
-					.hasConflicts(true)
-					.conflictType("DUPLICATE")
-					.message(String.format("El usuario ya tiene %d turno(s) asignado(s) para la fecha %s", existing.size(), date))
-					.canProceed(true); // Permitir pero con advertencia
-
-			conflictBuilder.warnings(List.of("Este usuario ya tiene turnos asignados para esta fecha", "La creación manual puede generar duplicados", "Verifique que esto sea intencional"));
-		} else {
-			conflictBuilder.hasConflicts(false).message("No se detectaron conflictos").canProceed(true);
-		}
-
-		return conflictBuilder.build();
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	@Cacheable(value = "workshiftStats", key = "#startDate + '-' + #endDate")
-	public WorkshiftStatisticsDTO getStatistics(LocalDate startDate, LocalDate endDate) {
-		log.debug("Obteniendo estadísticas de workshifts");
-
-		LocalDate start = startDate != null ? startDate : LocalDate.now().minusMonths(1);
-		LocalDate end = endDate != null ? endDate : LocalDate.now();
-
-		// Estadísticas generales
-		long totalWorkshifts = workshiftRepository.count();
-		long totalActiveOperators = userRepository.findByRoleAndActiveTrue(Role.OPERATOR).size();
-		long totalShiftsConfigured = shiftRepository.findByActiveTrue().size();
-
-		// Estadísticas por período
-		long workshiftsThisWeek = findCurrentWeekWorkshifts().size();
-		long workshiftsThisMonth = findCurrentMonthWorkshifts().size();
-		long workshiftsToday = countWorkshiftsByDate(LocalDate.now());
-
-		// Estadísticas futuras
-		List<Workshift> futureWorkshifts = workshiftRepository.findByDateAfterOrderByDateAsc(LocalDate.now());
-		Long futureWorkshiftsCount = (long) futureWorkshifts.size();
-
-		LocalDate nextMonday = getNextMonday();
-		LocalDate nextFriday = nextMonday.plusDays(4);
-		Boolean nextWeekPlanned = workshiftRepository.countByDateBetween(nextMonday, nextFriday) > 0;
-
-		// Distribución por tipo de turno
-		Map<String, Long> byShiftType = new HashMap<>();
-		for (ShiftType type : ShiftType.values()) {
-			Long count = workshiftRepository.countByShiftType(type);
-			byShiftType.put(type.getDisplayName(), count);
-		}
-
-		// Auditoría
-		Long modifiedWorkshifts = workshiftRepository.countModifiedWorkshifts();
-		Long workshiftsWithoutPalets = (long) workshiftRepository.findWorkshiftsWithoutPalets(LocalDate.now()).size();
-		Long workshiftsWithoutTimesheets = (long) workshiftRepository.findWorkshiftsWithoutTimesheets(LocalDate.now()).size();
-
-		return WorkshiftStatisticsDTO.builder()
-				.totalWorkshifts(totalWorkshifts)
-				.totalActiveOperators(totalActiveOperators)
-				.totalShiftsConfigured(totalShiftsConfigured)
-				.workshiftsThisWeek(workshiftsThisWeek)
-				.workshiftsThisMonth(workshiftsThisMonth)
-				.workshiftsToday(workshiftsToday)
-				.futureWorkshifts(futureWorkshiftsCount)
-				.nextWeekPlanned(nextWeekPlanned)
-				.workshiftsByShiftType(byShiftType)
-				.averageWorkshiftsPerUser(totalActiveOperators > 0 ? (double) totalWorkshifts / totalActiveOperators : 0.0)
-				.modifiedWorkshifts(modifiedWorkshifts)
-				.workshiftsWithoutPalets(workshiftsWithoutPalets)
-				.workshiftsWithoutTimesheets(workshiftsWithoutTimesheets)
-				.queryStartDate(start)
-				.queryEndDate(end)
-				.build();
+		return workshifts.map(workshiftMapper::toResponse);
 	}
 
 	@Override
@@ -500,86 +249,30 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 	@Override
 	@Transactional
 	@CacheEvict(value = "workshifts", allEntries = true)
-	public WeeklyScheduleResponseDTO generateNextWeekSchedule() {
-		log.info("╔════════════════════════════════════════════════════════════════╗");
-		log.info("║   INICIANDO GENERACIÓN AUTOMÁTICA DE TURNOS SEMANALES        ║");
-		log.info("║   Fecha/Hora: {}                             ║", LocalDateTime.now());
-		log.info("╚════════════════════════════════════════════════════════════════╝");
+	public void generateNextWeekSchedule() {
 
-		// 1. CALCULAR FECHAS
-		LocalDate nextMonday = getNextMonday();
-		LocalDate nextFriday = nextMonday.plusDays(4);
-		List<LocalDate> workDays = getWorkDaysBetween(nextMonday, nextFriday);
+		LocalDate today = LocalDate.now();
+		LocalDate nextMonday = today.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+		LocalDate nextSunday = nextMonday.plusDays(6);
 
-		log.info("Generando turnos desde {} hasta {}", nextMonday, nextFriday);
+		log.info("[CRON] Iniciando generación de turnos: {} al {}", nextMonday, nextSunday);
 
-		// 2. OBTENER ENTIDADES MAESTRAS
-		List<User> operators = userRepository.findByRoleAndActiveTrue(Role.OPERATOR);
-		List<Shift> shifts = shiftRepository.findAllActiveOrderedByStartTime();
+		try {
+			PlanningContext context = preparePlanningContext(nextMonday, nextSunday);
 
-		// Validar que tenemos datos para trabajar
-		if (operators.isEmpty()) {
-			log.error("No se encontraron usuarios OPERATOR activos para asignar turnos.");
-			return buildErrorResponse(nextMonday, nextFriday, "No hay operarios activos para planificar.");
-		}
-		if (shifts.isEmpty()) {
-			log.error("No se encontraron plantillas de Shift (turnos) activas en la base de datos.");
-			return buildErrorResponse(nextMonday, nextFriday, "No hay plantillas de turno activas para planificar.");
-		}
+			List<Workshift> generatedWorkshifts = calculateRotation(context);
 
-		log.info("Planificando turnos para {} operarios usando {} plantillas de turno.", operators.size(), shifts.size());
-
-		List<Workshift> workshiftsToSave = new ArrayList<>();
-
-		// 3. ITERAR Y ASIGNAR TURNOS
-		for (User operator : operators) {
-
-			// Obtener el último turno del operario para saber dónde continuar la rotación
-			ShiftType lastShiftType = workshiftRepository.findLastWorkshiftByUser(operator)
-					.map(Workshift::getShiftType).orElse(null); // Si es nuevo, empezará por el primero
-
-			log.debug("Procesando operario: {}. Último tipo de turno: {}", operator.getEmployeeNumber(), lastShiftType);
-
-			// Iterar por cada día laborable (Lun-Vie)
-			for (LocalDate date : workDays) {
-
-				// Obtener el siguiente turno en la rotación
-				Shift nextShift = getNextShift(shifts, lastShiftType);
-
-				// Validamos si YA EXISTE un turno para este operario en esta fecha.
-				// Esto permite "rellenar huecos" si un admin creó un turno manual.
-				if (workshiftRepository.findByUserAndDate(operator, date).isEmpty()) {
-
-					// No existe, así que lo creamos
-					Workshift newWorkshift = Workshift.create(operator, nextShift, date);
-
-					workshiftsToSave.add(newWorkshift);
-
-				} else {
-					// Ya existe un turno (ej. asignado manualmente).
-					// Lo registramos y continuamos al día siguiente.
-					log.warn("Saltando generación para operario {} en fecha {}: Ya existe un turno asignado.",
-							operator.getEmployeeNumber(), date);
-				}
-
-				// Actualizamos el "último turno" para la siguiente iteración del día
-				lastShiftType = nextShift.getShiftType();
+			if (generatedWorkshifts.isEmpty()) {
+				log.warn("No se generaron turnos (Quizás ya existen?)");
+				return;
 			}
+
+			workshiftRepository.saveAll(generatedWorkshifts);
+			log.info("[CRON] ÉXITO: Generados {} turnos para {} operadores.", generatedWorkshifts.size(), context.getOperators().size());
+		} catch (Exception e) {
+			log.error("[CRON] ERROR CRÍTICO: Fallo al generar la planificación semanal.", e);
+			throw e;
 		}
-
-		// 4. GUARDAR Y CONSTRUIR RESPUESTA
-		if (!workshiftsToSave.isEmpty()) {
-			log.info("Guardando {} nuevas asignaciones de turno...", workshiftsToSave.size());
-			workshiftRepository.saveAll(workshiftsToSave);
-		} else {
-			log.warn("No se generaron nuevas asignaciones de turno (probablemente ya existían todas).");
-		}
-
-		// Obtenemos la lista COMPLETA de turnos de esa semana
-		// (los que acabamos de guardar + los que ya existían y nos saltamos)
-		List<Workshift> allWorkshiftsForWeek = workshiftRepository.findByDateBetweenOrderByDateAsc(nextMonday, nextFriday);
-
-		return buildSuccessResponse(allWorkshiftsForWeek, operators, shifts, nextMonday, nextFriday);
 	}
 
 	@Override
@@ -603,7 +296,7 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 			// 3. Intentar leer ID desde Redis
 			workshiftId = workshiftRedisTemplate.opsForValue().get(cacheKey);
 		} catch (Exception e) {
-			log.error("❌ Error al leer de Redis (key: {}). Cayendo a BBDD. Error: {}", cacheKey, e.getMessage());
+			log.error("Error al leer de Redis (key: {}). Cayendo a BBDD. Error: {}", cacheKey, e.getMessage());
 		}
 
 		// 4. CACHE HIT
@@ -613,8 +306,6 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 					() -> new WorkshiftServiceException(CustomErrorCode.NOT_FOUND, "No existe el turno ", HttpStatus.NOT_FOUND));
 
 			return Optional.of(workshift);
-			// Mapeamos el resultado a DTO
-			//return Optional.of(workshiftMapper.toResponse(workshift));
 		}
 
 		// 5. CACHE MISS
@@ -632,11 +323,83 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 			log.info("Repoblando caché (miss) para clave {}.", cacheKey);
 			workshiftRedisTemplate.opsForValue().set(cacheKey, foundShift.getId(), CACHE_TTL);
 		} catch (Exception e) {
-			log.error("❌ Error al repoblar Redis (key: {}) tras un cache miss. Error: {}", cacheKey, e.getMessage());
+			log.error("Error al repoblar Redis (key: {}) tras un cache miss. Error: {}", cacheKey, e.getMessage());
 		}
 
 		// 7. Devolver el DTO
 		return foundShift != null ? Optional.of(foundShift) : Optional.empty();
+	}
+
+	private PlanningContext preparePlanningContext(LocalDate start, LocalDate end) {
+
+		List<User> operators = userRepository.findByRoleAndActiveTrue(Role.OPERATOR);
+		if (operators.isEmpty()) {
+			throw new WorkshiftServiceException(CustomErrorCode.INTERNAL_SERVER_ERROR,
+					"No hay operarios activos para planificar.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
+		List<Shift> shifts = shiftRepository.findAllActiveOrderedByStartTime();
+		if (shifts.isEmpty()) {
+			throw new WorkshiftServiceException(CustomErrorCode.INTERNAL_SERVER_ERROR,
+					"No hay plantillas de turno activas para planificar.", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
+		//  BULK DATA FETCHING (Solo si las validaciones pasaron)
+		// Traemos colisiones y últimos estados en paralelo (conceptualmente)
+		List<Workshift> existingCollisions = workshiftRepository.findByDateBetweenAndUserIn(start, end, operators);
+		List<Workshift> latestWorkshiftsForUsers = workshiftRepository.findLatestShiftTypesForUsers(operators);
+
+		// MAPEO EN MEMORIA (Optimizaciones O(1))
+		// Mapa de Colisiones: UserID -> Set<LocalDate>
+		Map<Long, Set<LocalDate>> occupiedDatesMap = new HashMap<>();
+
+		// El bucle for-each es excelente aquí, muy legible y performante
+		for (Workshift workshift : existingCollisions) {
+			occupiedDatesMap
+					.computeIfAbsent(workshift.getUser().getId(), k -> new HashSet<>())
+					.add(workshift.getDate());
+		}
+
+		// Mapa de Últimos Turnos: UserID -> ShiftType
+		Map<Long, ShiftType> lastShiftMap = latestWorkshiftsForUsers.stream()
+				.collect(Collectors.toMap(
+						ws -> ws.getUser().getId(),
+						Workshift::getShiftType,
+						(existing, replacement) -> existing
+				));
+
+		// CONSTRUCCIÓN DEL CONTEXTO INMUTABLE
+		return PlanningContext.builder()
+				.workingDays(getWorkDaysBetween(start, end)) // Calculamos días hábiles
+				.operators(operators)
+				.activeShifts(shifts)
+				.occupiedDatesMap(occupiedDatesMap)
+				.latestShiftTypeMap(lastShiftMap)
+				.build();
+	}
+
+
+	private List<Workshift> calculateRotation(PlanningContext context) {
+		List<Workshift> workshiftsToSave = new ArrayList<>();
+
+		for (User operator : context.getOperators()) {
+			// Recuperamos estado inicial de memoria (Map), no de DB
+			ShiftType lastShiftType = context.getLastShiftType(operator.getId());
+
+			for (LocalDate date : context.getWorkingDays()) {
+				Shift nextShift = getNextShift(context.getActiveShifts(), lastShiftType);
+
+				if (!context.hasCollision(operator.getId(), date)) {
+					Workshift newWorkshift = Workshift.create(operator, nextShift, date);
+					workshiftsToSave.add(newWorkshift);
+				} else {
+					log.debug("Omitiendo turno para usuario {} en {}: Ya ocupado.", operator.getId(), date);
+				}
+
+				lastShiftType = nextShift.getShiftType();
+			}
+		}
+		return workshiftsToSave;
 	}
 
 	/**
@@ -678,31 +441,13 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 				.orElseThrow(() -> new WorkshiftServiceException(CustomErrorCode.NOT_FOUND, "Usuario no encontrado con ID: " + id, HttpStatus.NOT_FOUND));
 	}
 
-	private Shift getShift(Long shiftId) {
-		return shiftRepository.findById(shiftId).orElseThrow(() -> new WorkshiftServiceException(CustomErrorCode.NOT_FOUND, "No se ha encontrado el turno", HttpStatus.NOT_FOUND));
-	}
-
 	private Workshift getWorkshiftEntityById(Long id) {
 		return workshiftRepository.findById(id)
 				.orElseThrow(() -> new WorkshiftServiceException(CustomErrorCode.NOT_FOUND, "Asignación de turno no encontrada con ID: " + id, HttpStatus.NOT_FOUND));
 	}
 
-	private void validateWorkshiftCreation(User user, Shift shift) {
-		if (!user.isActive()) {
-			throw new WorkshiftServiceException(CustomErrorCode.BAD_REQUEST, "No se puede asignar turno a un usuario inactivo", HttpStatus.BAD_REQUEST);
-		}
-
-		if (user.isBlocked()) {
-			throw new WorkshiftServiceException(CustomErrorCode.BAD_REQUEST, "No se puede asignar turno a un usuario bloqueado", HttpStatus.BAD_REQUEST);
-		}
-
-		if (!shift.isActive()) {
-			throw new WorkshiftServiceException(CustomErrorCode.CONFLICT, "No se puede asignar un turno (shift) inactivo", HttpStatus.CONFLICT);
-		}
-	}
-
-	private void validateNoConflict(User user, LocalDate date, Long excludeId) {
-		List<Workshift> existing = workshiftRepository.findPotentialConflicts(user, date);
+	private void validateNoConflict(User user, LocalDate date, Shift shift, Long excludeId) {
+		List<Workshift> existing = workshiftRepository.findPotentialConflicts(user, date, shift);
 
 		if (excludeId != null) {
 			existing = existing.stream().filter(w -> !w.getId().equals(excludeId)).toList();
@@ -710,28 +455,6 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 
 		if (!existing.isEmpty()) {
 			log.warn("ADVERTENCIA: El usuario {} ya tiene {} turno(s) para la fecha {}", user.getId(), existing.size(), date);
-		}
-	}
-
-	private void validateCanDelete(Workshift workshift) {
-		if (workshift.getTotalScannedPalets() > 0) {
-			String message = String.format("No se puede eliminar el turno porque tiene %d palets asociados", workshift.getTotalScannedPalets());
-			throw new WorkshiftServiceException(CustomErrorCode.CONFLICT, message, HttpStatus.CONFLICT);
-		}
-
-		if (workshift.getTotalTimesheets() > 0) {
-			String message = String.format("No se puede eliminar el turno porque tiene %d fichajes asociados", workshift.getTotalTimesheets());
-			throw new WorkshiftServiceException(CustomErrorCode.CONFLICT, message, HttpStatus.CONFLICT);
-		}
-	}
-
-	private void validateDateRange(LocalDate startDate, LocalDate endDate) {
-		if (startDate == null || endDate == null) {
-			throw new WorkshiftServiceException(CustomErrorCode.BAD_REQUEST, "Las fechas de inicio y fin son obligatorias", HttpStatus.BAD_REQUEST);
-		}
-
-		if (startDate.isAfter(endDate)) {
-			throw new WorkshiftServiceException(CustomErrorCode.BAD_REQUEST, "La fecha de inicio no puede ser posterior a la fecha de fin", HttpStatus.BAD_REQUEST);
 		}
 	}
 
@@ -743,64 +466,4 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 				}).toList();
 	}
 
-	private LocalDate getNextMonday() {
-		LocalDate today = LocalDate.now();
-		return today.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
-	}
-
-	private WeeklyScheduleResponseDTO buildSuccessResponse(List<Workshift> workshifts, List<User> operators, List<Shift> shifts, LocalDate startDate, LocalDate endDate) {
-
-		// Calcular distribuciones
-		Map<String, Integer> distributionByUser = new HashMap<>();
-		Map<String, Integer> distributionByShiftType = new HashMap<>();
-		Map<LocalDate, Integer> distributionByDay = new HashMap<>();
-
-		for (Workshift w : workshifts) {
-			// Por usuario
-			String userName = w.getUser().getFullName();
-			distributionByUser.put(userName, distributionByUser.getOrDefault(userName, 0) + 1);
-
-			// Por tipo de turno
-			String shiftType = w.getShift().getShiftType().getDisplayName();
-			distributionByShiftType.put(shiftType, distributionByShiftType.getOrDefault(shiftType, 0) + 1);
-
-			// Por día
-			distributionByDay.put(w.getDate(), distributionByDay.getOrDefault(w.getDate(), 0) + 1);
-		}
-
-		return WeeklyScheduleResponseDTO.builder()
-				.startDate(startDate)
-				.endDate(endDate)
-				.totalWorkshiftsGenerated(workshifts.size())
-				.totalOperators(operators.size())
-				.totalShifts(shifts.size())
-				.workDays(getWorkDaysBetween(startDate, endDate).size())
-				.workshifts(workshiftMapper.toSummaryList(workshifts))
-				.distributionByUser(distributionByUser)
-				.distributionByShiftType(distributionByShiftType)
-				.distributionByDay(distributionByDay)
-				.generatedAt(LocalDateTime.now())
-				.success(true)
-				.message("Planificación semanal generada exitosamente")
-				.build();
-	}
-
-	private WeeklyScheduleResponseDTO buildErrorResponse(LocalDate startDate, LocalDate endDate, String errorMessage) {
-
-		return WeeklyScheduleResponseDTO.builder()
-				.startDate(startDate)
-				.endDate(endDate)
-				.totalWorkshiftsGenerated(0)
-				.totalOperators(0)
-				.totalShifts(0)
-				.workDays(0)
-				.workshifts(List.of())
-				.distributionByUser(Map.of())
-				.distributionByShiftType(Map.of())
-				.distributionByDay(Map.of())
-				.generatedAt(LocalDateTime.now())
-				.success(false)
-				.message("Error en generación: " + errorMessage)
-				.build();
-	}
 }
