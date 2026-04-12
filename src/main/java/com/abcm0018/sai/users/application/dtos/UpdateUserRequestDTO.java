@@ -2,6 +2,7 @@ package com.abcm0018.sai.users.application.dtos;
 
 import com.abcm0018.sai.users.domain.enums.Role;
 
+import com.abcm0018.sai.users.domain.enums.Status;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -38,4 +39,6 @@ public class UpdateUserRequestDTO {
 	private String jobPosition;
 
 	private Role role;
+
+	private Status status;
 }

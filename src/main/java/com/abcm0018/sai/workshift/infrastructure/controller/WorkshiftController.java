@@ -65,7 +65,7 @@ public class WorkshiftController {
 	@GetMapping("/search")
 	@Operation(
 			summary = "Buscar turnos con filtros",
-			description = "Permite fiultrar por operario, fecha, tipo, ect. Soporta paginación y ordenamiento"
+			description = "Permite filtrar por operario, fecha, tipo, ect. Soporta paginación y ordenamiento"
 	)
 	public StandardResponse<Page<WorkshiftResponseDTO>> search(
 			// Desglosa los campos DTO como query params individuales en la documentación

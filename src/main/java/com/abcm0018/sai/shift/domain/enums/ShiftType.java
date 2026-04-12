@@ -6,9 +6,7 @@ import lombok.Getter;
 public enum ShiftType {
 	MORNING("Mañana"),
 	AFTERNOON("Tarde"),
-	NIGHT("Noche"),
-	SPLIT("Partido"); // Por si hay turnos partidos
-
+	NIGHT("Noche");
 	private final String displayName;
 
 	ShiftType(String displayName) {

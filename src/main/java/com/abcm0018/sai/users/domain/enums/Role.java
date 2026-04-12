@@ -2,6 +2,8 @@ package com.abcm0018.sai.users.domain.enums;
 
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 public enum Role {
     ADMIN("Administrador"), //Administrador
@@ -12,5 +14,9 @@ public enum Role {
 
 	Role(String displayName) {
 		this.displayName = displayName;
+	}
+
+	public static List<Role> getRoles(){
+		return List.of(SUPERVISOR, ADMIN, OPERATOR);
 	}
 }

@@ -1,9 +1,11 @@
 package com.abcm0018.sai.palets.infrastructure;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
+import com.abcm0018.sai.shift.domain.enums.ShiftType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -100,15 +102,15 @@ public class PaletController {
 
 	@CrossOrigin
 	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'OPERATOR')")
-	@GetMapping("/recent-100")
-	public StandardResponse<List<PaletNotificationDTO>> getRecent100Palets() {
+	@GetMapping("/recent-7")
+	public StandardResponse<List<PaletNotificationDTO>> getRecent7Palets() {
 
-		// Creamos el plegable para los 100 últimos palets
-		Pageable pageable = PageRequest.of(0, 100, Sort.by(Sort.Direction.DESC, "createdAt"));
+		// Creamos el plegable para los 7 últimos palets
+		Pageable pageable = PageRequest.of(0, 7, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-		Page<PaletNotificationDTO> recent100pales = paletService.findRecent100Palets(pageable);
+		Page<PaletNotificationDTO> recent7pales = paletService.findRecent7Palets(pageable);
 
-		List<PaletNotificationDTO> content = recent100pales.getContent();
+		List<PaletNotificationDTO> content = recent7pales.getContent();
 
 		String message = String.format("Se encontraron %d palets recientes.", content.size());
 		return ResponseBuilder.with(HttpStatus.OK, true, message, content);
@@ -691,16 +693,21 @@ public class PaletController {
 			@RequestParam(required = false) Long packLevelId,
 			@RequestParam(required = false) Long userId,
 			@RequestParam(required = false) Long workshiftId,
+			@RequestParam(required = false) String shiftType,
 			@RequestParam(required = false) String batchNumber,
+			@RequestParam(required = false) String brand,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
 			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+			@RequestParam(required = false) String gtin,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME)LocalTime startTime,
+			@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.TIME)LocalTime endTime,
 			@PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-		log.debug("Búsqueda avanzada - Producto: {}, PackLevel: {}, Usuario: {}, Turno: {}, Lote: {}, Fechas: {} a {}",
-				productId, packLevelId, userId, workshiftId, batchNumber, startDate, endDate);
+		log.debug("Búsqueda avanzada - Producto: {}, PackLevel: {}, Marca: {}, Usuario: {}, Turno: {}, Descripción turno: {}, Lote: {}, Fechas: {} a {}, Gtin: {}, Horas: {} a {}",
+				productId, packLevelId, userId, workshiftId, shiftType, batchNumber, brand, startDate, endDate, gtin, startTime, endTime);
 
 		Page<PaletResponseDTO> palets = paletService.findWithFilters(
-				productId, packLevelId, userId, workshiftId, batchNumber, startDate, endDate, pageable
+				productId, packLevelId, userId, workshiftId, shiftType, batchNumber, brand, startDate, endDate, gtin, startTime, endTime, pageable
 		);
 
 		String message = String.format("Encontrados %d palets que cumplen los filtros", palets.getTotalElements());

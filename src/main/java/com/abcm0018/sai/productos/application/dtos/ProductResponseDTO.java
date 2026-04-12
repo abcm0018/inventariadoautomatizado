@@ -34,6 +34,9 @@ public class ProductResponseDTO implements Serializable {
 	@JsonProperty("brand")
 	private String brand;
 
+	@JsonProperty("description")
+	private String description;
+
 	@JsonProperty("format_code")
 	private String formatCode;
 

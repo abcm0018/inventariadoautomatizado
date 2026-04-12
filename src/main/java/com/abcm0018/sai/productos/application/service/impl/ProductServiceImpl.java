@@ -3,6 +3,8 @@ package com.abcm0018.sai.productos.application.service.impl;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.abcm0018.sai.productos.application.dtos.ProductBrandResponse;
+import com.abcm0018.sai.users.exceptions.UserServiceException;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -143,6 +145,37 @@ public class ProductServiceImpl implements ProductService {
 		}
 	}
 
+	/**
+	 * Elimina un producto (soft delete)
+	 * Solo marca al producto como discontinuo, no lo borra de la BD
+	 * <p>
+	 * IMPORTANTE: Los datos históricos se mantienen intactos
+	 *
+	 * @param id ID del producto
+	 */
+	@Override
+	@Transactional
+	@Caching(evict = {
+			@CacheEvict(value = "users", key = "#id"),
+			@CacheEvict(value = "usersByEmployeeNumber", allEntries = true),
+			@CacheEvict(value = "usersByEmail", allEntries = true),
+			@CacheEvict(value = "activeUsers", allEntries = true)
+	})
+	public void deleteSoftProduct(Long id) {
+		log.info("Desactivando producto {}", id);
+
+		Product product = findProductEntityById(id);
+
+		// Soft delete: marcar como discontinuo
+		if(product.isActive()){
+			product.setStatus(ProductStatus.DISCONTINUED);
+			productRepository.save(product);
+			log.info("Producto {} borrado temporalmente", id);
+		}else {
+			log.warn("El producto {} ya no estaba activo (Estado actual: {})", id, product.getStatus());
+		}
+	}
+
 	@Override
 	@Transactional(readOnly = true)
 	@Cacheable(value = CACHE_BY_BRAND_FORMAT, key = "#brand + '_' + #formatCode", unless = "#result == null")
@@ -269,6 +302,17 @@ public class ProductServiceImpl implements ProductService {
 		return productRepository.findWithFilters(status, brand, name, country, pageable).map(mapper::toResponse);
 	}
 
+	@Override
+	@Transactional(readOnly = true)
+	public ProductBrandResponse getAllBrandsProducts() {
+		log.debug("Obteniendo lista de marcas únicas de productos");
+		List<String> brands = productRepository.findDistinctBrands();
+		if (brands.isEmpty()) {
+			log.warn("No se encontraron marcas en la base de datos");
+		}
+		return new ProductBrandResponse(brands);
+	}
+
 	/**
 	 * Obtiene un producto por ID o lanza excepción
 	 * Reutilizable en múltiples métodos
@@ -279,6 +323,15 @@ public class ProductServiceImpl implements ProductService {
 					log.warn("Producto no encontrado - ID: {}", id);
 					return new ProductServiceException(CustomErrorCode.NOT_FOUND, "Producto no encontrado con ID: " + id, HttpStatus.NOT_FOUND);
 				});
+	}
+
+	/**
+	 * Obtiene la entidad Product por ID (sin convertir a DTO)
+	 * Método interno para evitar conversiones innecesarias
+	 */
+	private Product findProductEntityById(Long id) {
+		return productRepository.findById(id)
+				.orElseThrow(() -> new UserServiceException(CustomErrorCode.NOT_FOUND, "Producto no encontrado con ID: " + id, HttpStatus.NOT_FOUND));
 	}
 
 }

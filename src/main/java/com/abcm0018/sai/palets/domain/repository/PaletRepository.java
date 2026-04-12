@@ -3,6 +3,7 @@ package com.abcm0018.sai.palets.domain.repository;
 import com.abcm0018.sai.palets.domain.entity.Palet;
 import com.abcm0018.sai.productos.domain.entity.Product;
 import com.abcm0018.sai.productos.domain.entity.ProductPackLevel;
+import com.abcm0018.sai.shift.domain.enums.ShiftType;
 import com.abcm0018.sai.users.domain.entity.User;
 import com.abcm0018.sai.workshift.domain.entity.Workshift;
 
@@ -320,7 +321,7 @@ public interface PaletRepository extends JpaRepository<Palet, Long> {
 			"GROUP BY CAST(p.created_at AS DATE)) as daily",
 			nativeQuery = true)
 	Double getAveragePaletsPerDay(@Param("startDate") LocalDateTime startDate,
-			@Param("endDate") LocalDateTime endDate);
+								  @Param("endDate") LocalDateTime endDate);
 
 	/**
 	 * Top N productos más producidos
@@ -364,18 +365,29 @@ public interface PaletRepository extends JpaRepository<Palet, Long> {
 	@Query("SELECT p FROM Palet p WHERE " +
 			"(:productId IS NULL OR p.productPackLevel.product.id = :productId) AND " +
 			"(:packLevelId IS NULL OR p.productPackLevel.id = :packLevelId) AND " +
+			"(:gtin IS NULL OR p.productPackLevel.gtin = :gtin) AND " +
+			"(:batchNumber IS NULL OR p.batchNumber = :batchNumber) AND " +
+			"(:brand IS NULL OR p.productPackLevel.product.brand = :brand) AND " +
 			"(:userId IS NULL OR p.user.id = :userId) AND " +
 			"(:workshiftId IS NULL OR p.workshift.id = :workshiftId) AND " +
-			"(:batchNumber IS NULL OR p.batchNumber = :batchNumber) AND " +
+			"(:shiftType IS NULL OR p.workshift.shift.shiftType = :shiftType) AND " +
 			"(:startDate IS NULL OR p.createdAt >= :startDate) AND " +
-			"(:endDate IS NULL OR p.createdAt <= :endDate)")
+			"(:endDate IS NULL OR p.createdAt <= :endDate) AND " +
+			"(:startTime IS NULL OR p.productionTime >= :startTime) AND " +
+			"(:endTime IS NULL OR p.productionTime <= :endTime)")
 	Page<Palet> findWithFilters(@Param("productId") Long productId,
 			@Param("packLevelId") Long packLevelId,
 			@Param("userId") Long userId,
 			@Param("workshiftId") Long workshiftId,
+			@Param("shiftType") ShiftType shiftType,
 			@Param("batchNumber") String batchNumber,
+			@Param("brand") String brand,
 			@Param("startDate") LocalDateTime startDate,
-			@Param("endDate") LocalDateTime endDate, Pageable pageable);
+			@Param("endDate") LocalDateTime endDate,
+			@Param("gtin") String gtin,
+			@Param("startTime") String startTime,
+			@Param("endTime") String endTime,
+			Pageable pageable);
 
 	/**
 	 * Búsqueda general por SSCC o lote

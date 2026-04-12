@@ -109,4 +109,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 	Page<Product> findWithFilters(@Param("status") ProductStatus status, @Param("brand") String brand, @Param("name") String name, @Param("country") String country, Pageable pageable);
 
 	boolean existsByBrandAndFormatCode(String brand, String formatCode);
+
+	/**
+	 * Obtiene todas las marcas de productos
+	 */
+	@Query("SELECT DISTINCT p.brand FROM Product p WHERE p.brand IS NOT NULL ORDER BY p.brand ASC")
+	List<String> findDistinctBrands();
 }

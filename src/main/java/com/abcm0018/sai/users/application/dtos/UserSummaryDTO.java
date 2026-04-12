@@ -45,4 +45,7 @@ public class UserSummaryDTO implements Serializable {
 
 	@JsonProperty("account_status")
 	private String accountStatus;
+
+	@JsonProperty("registration_date")
+	private String registrationDate;
 }

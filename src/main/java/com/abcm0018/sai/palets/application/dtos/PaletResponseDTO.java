@@ -70,6 +70,9 @@ public class PaletResponseDTO implements Serializable {
 	@JsonProperty(value = "user_id")
 	private Long userId;
 
+	@JsonProperty(value = "employee_number")
+	private String employeeNumber;
+
 	@JsonProperty(value = "user_fullname")
 	private String userFullName;
 
@@ -78,6 +81,12 @@ public class PaletResponseDTO implements Serializable {
 
 	@JsonProperty(value = "workshift_date")
 	private LocalDate workshiftDate;
+
+	@JsonProperty(value = "shift_type")
+	private String shiftType;
+
+	@JsonProperty(value = "shift_display_name")
+	private String shiftDisplayName;
 
 	// Campos calculados
 	@JsonProperty(value = "days_until_expiry")

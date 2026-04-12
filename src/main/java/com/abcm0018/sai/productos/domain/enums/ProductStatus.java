@@ -1,6 +1,7 @@
 package com.abcm0018.sai.productos.domain.enums;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -20,7 +21,7 @@ public enum ProductStatus {
 	/**
 	 * Producto discontinuado, ya no se fabrica
 	 */
-	DISCONTINUED("Discontinuado"),
+	DISCONTINUED("Discontinuo"),
 
 	/**
 	 * Producto temporalmente fuera de producción
@@ -30,7 +31,7 @@ public enum ProductStatus {
 	/**
 	 * Producto en fase de prueba/validación
 	 */
-	PILOT("En fase piloto");
+	PILOT("Fase piloto");
 
 	private final String displayName;
 
@@ -39,9 +40,12 @@ public enum ProductStatus {
 	}
 
 	private static final Set<String> VALID_STATUSES = Arrays.stream(values())
-			.map(ProductStatus::getDisplayName)
+			.map(status -> status.name() + "|" + status.getDisplayName())
 			.collect(toSet());
 
+	public static Set<String> getProductStatus(){
+		return VALID_STATUSES;
+	}
 
 	/**
 	 * Busca un ProductStatus por su nombre técnico (ej. "ACTIVE") o

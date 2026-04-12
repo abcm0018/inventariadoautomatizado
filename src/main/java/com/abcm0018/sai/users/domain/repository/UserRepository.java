@@ -94,6 +94,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	Page<User> findByActiveTrue(Pageable pageable);
 
 	/**
+	 * Encuentra usuarios que requieren gestión con paginación
+	 */
+	@Query("SELECT u FROM User u WHERE u.active = false")
+	Page<User> findManagementUsers(Pageable pageable);
+
+	/**
+
+	/**
 	 * Encuentra usuarios inactivos
 	 */
 	List<User> findByActiveFalse();

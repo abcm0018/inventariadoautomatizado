@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -53,7 +52,6 @@ import com.abcm0018.sai.timesheet.application.dtos.TimesheetDetailResponseDTO;
 import com.abcm0018.sai.timesheet.application.service.TimesheetService;
 import com.abcm0018.sai.users.domain.entity.User;
 import com.abcm0018.sai.users.domain.repository.UserRepository;
-import com.abcm0018.sai.workshift.application.dtos.WorkshiftResponseDTO;
 import com.abcm0018.sai.workshift.application.service.WorkshiftService;
 import com.abcm0018.sai.workshift.domain.entity.Workshift;
 import com.abcm0018.sai.workshift.domain.repository.WorkshiftRepository;
@@ -185,7 +183,7 @@ public class PaletServiceImpl implements PaletService {
 	}
 
 	@Override
-	public Page<PaletNotificationDTO> findRecent100Palets(Pageable pageable) {
+	public Page<PaletNotificationDTO> findRecent7Palets(Pageable pageable) {
 		return paletRepository.findAll(pageable).map(paletMapper::toResponsePaletNotification);
 	}
 
@@ -813,27 +811,34 @@ public class PaletServiceImpl implements PaletService {
 	@Transactional(readOnly = true)
 	@Cacheable(
 			value = "paletFilters",
-			key = "T(java.util.Objects).hash(#productId, #packLevelId, #userId, #workshiftId, #batchNumber, #startDate, #endDate, #pageable.pageNumber, #pageable.pageSize)",
+			key = "T(java.util.Objects).hash(#productId, #packLevelId, #userId, #workshiftId, #shiftTypeStr, #batchNumber, #brand, #startDate, #endDate, #gtin, #startTime, #endTime, #pageable.pageNumber, #pageable.pageSize)",
 			unless = "#result == null || #result.isEmpty()"
 	)
-	public Page<PaletResponseDTO> findWithFilters(Long productId, Long packLevelId, Long userId, Long workshiftId,
-			String batchNumber, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+	public Page<PaletResponseDTO> findWithFilters(Long productId, Long packLevelId, Long userId, Long workshiftId, String shiftTypeStr,
+												  String batchNumber, String brand, LocalDate startDate, LocalDate endDate, String gtin, LocalTime startTime, LocalTime endTime, Pageable pageable) {
 
-		log.debug("Búsqueda con filtros - Producto: {}, PackLevel: {}, Usuario: {}, Turno: {}, Lote: {}", productId,
-				packLevelId, userId, workshiftId, batchNumber);
+		log.debug("Búsqueda con filtros - Producto: {}, PackLevel: {}, Usuario: {}, Turno: {}, Descripción Turno: {},  Lote: {}, Gtin: {}, Marca: {}", productId,
+				packLevelId, userId, workshiftId, shiftTypeStr, batchNumber, brand, gtin);
 
 		validateDateRange(startDate, endDate);
+		validateTimeRange(startTime, endTime);
 
 		LocalDateTime startDateTime = startDate != null ? startDate.atStartOfDay() : null;
 		LocalDateTime endDateTime = endDate != null ? endDate.atTime(23, 59, 59) : null;
 
-		Page<Palet> palets = paletRepository.findWithFilters(productId, packLevelId, userId, workshiftId, batchNumber,
-				startDateTime, endDateTime, pageable);
+		ShiftType shiftType = convertToShiftType(shiftTypeStr);
+		String startStr = (startTime != null) ? startTime.toString() : null; // "HH:mm"
+		String endStr = (endTime != null) ? endTime.toString() : null;
+
+		Page<Palet> palets = paletRepository.findWithFilters(productId, packLevelId, userId, workshiftId, shiftType, batchNumber, brand,
+				startDateTime, endDateTime, gtin, startStr, endStr, pageable);
 
 		log.info("Búsqueda completada - {} palets encontrados", palets.getNumberOfElements());
 
 		return palets.map(paletMapper::toResponse);
 	}
+
+
 
 	@Override
 	@Transactional(readOnly = true)
@@ -976,6 +981,29 @@ public class PaletServiceImpl implements PaletService {
 				log.warn("Rango de fechas muy amplio: {} días", daysBetween);
 			}
 		}
+	}
+
+	private void validateTimeRange(LocalTime startTime, LocalTime endTime) {
+		if (startTime != null && endTime != null) {
+			if (startTime.isAfter(endTime)) {
+				throw new PaletsServiceException(CustomErrorCode.BAD_REQUEST, "Hora inicio no puede ser posterior a hora fin", HttpStatus.BAD_REQUEST);
+			}
+		}
+	}
+
+	private ShiftType convertToShiftType(String value) {
+		if (value == null || value.isBlank()) {
+			return null;
+		}
+
+		for (ShiftType type : ShiftType.values()) {
+			if (type.name().equalsIgnoreCase(value) || type.getDisplayName().equalsIgnoreCase(value)) {
+				return type;
+			}
+		}
+
+		log.warn("No se pudo mapear el valor de turno: {}", value);
+		return null;
 	}
 
 	private Palet getPaletById(Long id) {

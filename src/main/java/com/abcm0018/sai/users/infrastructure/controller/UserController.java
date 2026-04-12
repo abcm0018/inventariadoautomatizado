@@ -1,7 +1,10 @@
 package com.abcm0018.sai.users.infrastructure.controller;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.abcm0018.sai.shared.response.ResponseBuilder;
 import com.abcm0018.sai.shared.response.StandardResponse;
@@ -9,6 +12,7 @@ import com.abcm0018.sai.users.application.dtos.*;
 import com.abcm0018.sai.users.domain.enums.Role;
 import com.abcm0018.sai.users.application.service.UserService;
 
+import com.abcm0018.sai.users.domain.enums.Status;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +28,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Controlador REST para la gestión de usuarios del sistema
@@ -450,53 +456,53 @@ public class UserController {
 		return ResponseBuilder.with(HttpStatus.OK, true, message, operators);
 	}
 
-	/**
-	 * Obtener administradores activos
-	 */
-	@CrossOrigin
-	@GetMapping("/admins/active")
-	@PreAuthorize("hasRole('ADMIN')")
-	@Operation(
-			summary = "Obtener administradores activos",
-			description = "Retorna lista de todos los administradores activos del sistema"
-	)
-	public StandardResponse<List<UserSummaryDTO>> getActiveAdmins() {
+//	/**
+//	 * Obtener administradores activos
+//	 */
+//	@CrossOrigin
+//	@GetMapping("/admins/active")
+//	@PreAuthorize("hasRole('ADMIN')")
+//	@Operation(
+//			summary = "Obtener administradores activos",
+//			description = "Retorna lista de todos los administradores activos del sistema"
+//	)
+//	public StandardResponse<List<UserSummaryDTO>> getActiveAdmins() {
+//
+//		log.debug("Obteniendo administradores activos");
+//
+//		List<UserSummaryDTO> admins = userService.findActiveAdmins();
+//
+//		return ResponseBuilder.with(
+//				HttpStatus.OK,
+//				true,
+//				String.format("Encontrados %d administradores activos", admins.size()),
+//				admins
+//		);
+//	}
 
-		log.debug("Obteniendo administradores activos");
-
-		List<UserSummaryDTO> admins = userService.findActiveAdmins();
-
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				String.format("Encontrados %d administradores activos", admins.size()),
-				admins
-		);
-	}
-
-	/**
-	 * Obtener supervisores activos
-	 */
-	@CrossOrigin
-	@GetMapping("/supervisors/active")
-	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
-	@Operation(
-			summary = "Obtener supervisores activos",
-			description = "Retorna lista de todos los supervisores activos del sistema"
-	)
-	public StandardResponse<List<UserSummaryDTO>> getActiveSupervisors() {
-
-		log.debug("Obteniendo supervisores activos");
-
-		List<UserSummaryDTO> supervisors = userService.findActiveSupervisors();
-
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				String.format("Encontrados %d supervisores activos", supervisors.size()),
-				supervisors
-		);
-	}
+//	/**
+//	 * Obtener supervisores activos
+//	 */
+//	@CrossOrigin
+//	@GetMapping("/supervisors/active")
+//	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
+//	@Operation(
+//			summary = "Obtener supervisores activos",
+//			description = "Retorna lista de todos los supervisores activos del sistema"
+//	)
+//	public StandardResponse<List<UserSummaryDTO>> getActiveSupervisors() {
+//
+//		log.debug("Obteniendo supervisores activos");
+//
+//		List<UserSummaryDTO> supervisors = userService.findActiveSupervisors();
+//
+//		return ResponseBuilder.with(
+//				HttpStatus.OK,
+//				true,
+//				String.format("Encontrados %d supervisores activos", supervisors.size()),
+//				supervisors
+//		);
+//	}
 
 	/**
 	 * Contar usuarios por rol
@@ -545,28 +551,54 @@ public class UserController {
 	}
 
 	/**
-	 * Listar usuarios bloqueados
+	 * Listar usuarios que requieren gestión (Inactivos, Bloqueados, Expirados)
 	 */
 	@CrossOrigin
-	@GetMapping("/blocked")
-	@PreAuthorize("hasRole('ADMIN')")
+	@GetMapping("/management")
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@Operation(
-			summary = "Listar usuarios bloqueados",
-			description = "Retorna todos los usuarios bloqueados por seguridad"
+			summary = "Listar usuarios que requieren gestión",
+			description = "Retorna página de usuarios con estado activo = true"
 	)
-	public StandardResponse<List<UserSummaryDTO>> getBlockedUsers() {
+	public StandardResponse<Page<UserSummaryDTO>> getManagementUsers(
+			@PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC)
+			Pageable pageable) {
 
-		log.debug("Listando usuarios bloqueados");
+		log.debug("Listando usuarios que requieren gestión - Página: {}", pageable.getPageNumber());
 
-		List<UserSummaryDTO> blocked = userService.findBlockedUsers();
+		Page<UserSummaryDTO> users = userService.findManagementUsers(pageable);
 
 		return ResponseBuilder.with(
 				HttpStatus.OK,
 				true,
-				String.format("Encontrados %d usuarios bloqueados", blocked.size()),
-				blocked
+				String.format("Encontrados %d usuarios activos", users.getTotalElements()),
+				users
 		);
 	}
+
+//	/**
+//	 * Listar usuarios bloqueados
+//	 */
+//	@CrossOrigin
+//	@GetMapping("/blocked")
+//	@PreAuthorize("hasRole('ADMIN')")
+//	@Operation(
+//			summary = "Listar usuarios bloqueados",
+//			description = "Retorna todos los usuarios bloqueados por seguridad"
+//	)
+//	public StandardResponse<List<UserSummaryDTO>> getBlockedUsers() {
+//
+//		log.debug("Listando usuarios bloqueados");
+//
+//		List<UserSummaryDTO> blocked = userService.findBlockedUsers();
+//
+//		return ResponseBuilder.with(
+//				HttpStatus.OK,
+//				true,
+//				String.format("Encontrados %d usuarios bloqueados", blocked.size()),
+//				blocked
+//		);
+//	}
 
 	/**
 	 * Contar usuarios activos
@@ -786,5 +818,40 @@ public class UserController {
 		String message = isValid ? "El usuario es válido" : "El usuario NO es válido (inactivo, bloqueado o expirado)";
 
 		return ResponseBuilder.with(HttpStatus.OK, true, message, isValid);
+	}
+
+    /**
+     * Obtener todos los roles disponibles en el sistema
+     */
+    @CrossOrigin
+    @GetMapping("/roles")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
+    @Operation(
+            summary = "Listar roles disponibles",
+            description = "Obtiene la lista de roles con su nombre técnico y nombre para mostrar"
+    )
+    public StandardResponse<RoleResponseDTO> getAvailableRoles() {
+        log.info("Petición REST para obtener todos los roles disponibles");
+
+		List<String> rolesStr = Role.getRoles().stream()
+				.map(role -> role.name() + "|" + role.getDisplayName())
+				.toList();
+
+		return ResponseBuilder.with(HttpStatus.OK, true, "Roles recuperados correctamente", new RoleResponseDTO(rolesStr));
+    }
+
+	@CrossOrigin
+	@GetMapping("/status") // Endpoint: /api/v1/users/status
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
+	@Operation(
+			summary = "Listar estados disponibles",
+			description = "Obtiene los estados de cuenta con su valor técnico y nombre amigable"
+	)
+	public StandardResponse<StatusResponseDTO> getAvailableStatus() {
+		log.info("Petición REST para obtener todos los estados disponibles");
+
+		List<String> statusStr = Status.getStatus().stream().map(status -> status.name()  + "|" + status.getDisplayStatus()).toList();
+
+		return ResponseBuilder.with(HttpStatus.OK, true, "Estados recuperados correctamente", new StatusResponseDTO(statusStr));
 	}
 }

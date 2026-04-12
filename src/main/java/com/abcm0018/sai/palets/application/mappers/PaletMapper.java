@@ -101,9 +101,13 @@ public interface PaletMapper {
 	@Mapping(target = "productName", source = "productPackLevel.product.name")
 	@Mapping(target = "productBrand", source = "productPackLevel.product.brand")
 	@Mapping(target = "userId", source = "user.id")
+	@Mapping(target = "employeeNumber", source = "user.employeeNumber")
 	@Mapping(target = "userFullName", expression = "java(getUserFullName(palet))")
 	@Mapping(target = "workshiftId", source = "workshift.id")
 	@Mapping(target = "workshiftDate", source = "workshift.date")
+	@Mapping(target = "productionTime", source = "productionTime")
+	@Mapping(target = "shiftType", source = "workshift.shift.shiftType")
+	@Mapping(target = "shiftDisplayName", source = "workshift.shift.shiftType.displayName")
 	PaletResponseDTO toResponse(Palet palet);
 
 	/**
@@ -169,6 +173,8 @@ public interface PaletMapper {
 	 * @param palet entidad persistida
 	 * @return DTO con información esencial para listados
 	 */
+	@Mapping(target = "employeeNumber", source = "user.employeeNumber")
+	@Mapping(target = "shift", source = "workshift.shift.shiftType.displayName")
 	@Mapping(target = "gtin", source = "productPackLevel.gtin")
 	@Mapping(target = "productName", source = "productPackLevel.product.name")
 	@Mapping(target = "productBrand", source = "productPackLevel.product.brand")

@@ -4,11 +4,10 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
-import org.mapstruct.ReportingPolicy;
+import com.abcm0018.sai.productos.application.dtos.ProductResponseDTO;
+import com.abcm0018.sai.productos.domain.entity.Product;
+import com.abcm0018.sai.users.domain.enums.Status;
+import org.mapstruct.*;
 
 import com.abcm0018.sai.users.application.dtos.*;
 import com.abcm0018.sai.users.domain.entity.User;
@@ -47,9 +46,6 @@ public interface UserMapper {
 	@Mapping(target = "createdAt", ignore = true)
 	@Mapping(target = "updatedAt", ignore = true)
 	@Mapping(target = "registrationDate", ignore = true)
-	@Mapping(target = "active", ignore = true)
-	@Mapping(target = "blocked", ignore = true)
-	@Mapping(target = "expired", ignore = true)
 	@Mapping(target = "workshifts", ignore = true)
 	@Mapping(target = "scannedPalets", ignore = true)
 	void updateEntityFromRequest(UpdateUserRequestDTO requestDTO, @MappingTarget User entity);
@@ -123,6 +119,8 @@ public interface UserMapper {
 	 * Determina el estado de la cuenta del usuario
 	 */
 	default String getAccountStatus(User user) {
+
+
 		if (user == null) {
 			return "UNKNOWN";
 		}

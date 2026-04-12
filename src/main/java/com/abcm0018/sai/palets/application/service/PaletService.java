@@ -1,9 +1,12 @@
 package com.abcm0018.sai.palets.application.service;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -15,6 +18,7 @@ import com.abcm0018.sai.palets.application.dtos.PaletSummaryResponseDTO;
 import com.abcm0018.sai.palets.application.dtos.UpdatePaletRequestDTO;
 import com.abcm0018.sai.palets.domain.entity.Palet;
 import com.abcm0018.sai.palets.infrastructure.messaging.dtos.PaletLecturaMessageDTO;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface PaletService {
 
@@ -24,7 +28,7 @@ public interface PaletService {
 	PaletDetailResponseDTO findById(Long id);
 	PaletDetailResponseDTO findBySscc(String sscc);
 	Page<PaletSummaryResponseDTO> findAll(Pageable pageable);
-	Page<PaletNotificationDTO> findRecent100Palets(Pageable pageable);
+	Page<PaletNotificationDTO> findRecent7Palets(Pageable pageable);
 	PaletDetailResponseDTO updatePalet(Long id, UpdatePaletRequestDTO request);
 	void deletePalet(Long id);
 
@@ -83,8 +87,15 @@ public interface PaletService {
 
 	// ========== BÚSQUEDAS AVANZADAS ==========
 
-	Page<PaletResponseDTO> findWithFilters(Long productId, Long packLevelId, Long userId, Long workshiftId,
-			String batchNumber, LocalDate startDate, LocalDate endDate, Pageable pageable);
+	@Transactional(readOnly = true)
+	@Cacheable(
+			value = "paletFilters",
+			key = "T(java.util.Objects).hash(#productId, #packLevelId, #userId, #workshiftId, #shiftTypeStr, #batchNumber, #brand, #startDate, #endDate, #gtin, #startTime, #endTime, #pageable.pageNumber, #pageable.pageSize)",
+			unless = "#result == null || #result.isEmpty()"
+	)
+	Page<PaletResponseDTO> findWithFilters(Long productId, Long packLevelId, Long userId, Long workshiftId, String shiftTypeStr,
+										   String batchNumber, String brand, LocalDate startDate, LocalDate endDate, String gtin, LocalTime startTime, LocalTime endTime, Pageable pageable);
+
 	List<PaletSummaryResponseDTO> searchPalets(String search);
 
 	void procesarNuevaLecturaPalet(PaletLecturaMessageDTO message);

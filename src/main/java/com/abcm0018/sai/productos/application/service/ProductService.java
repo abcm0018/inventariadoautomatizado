@@ -3,6 +3,7 @@ package com.abcm0018.sai.productos.application.service;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.abcm0018.sai.productos.application.dtos.ProductBrandResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -85,6 +86,14 @@ public interface ProductService {
 	 * @throws ProductServiceException si no existe o tiene niveles asociados
 	 */
 	void deleteProduct(Long id);
+
+	/**
+	 * Elimina un producto (soft delete - lo marca como discontinuo)
+	 * <p>os
+	 *
+	 * @param id ID del producto a eliminar
+	 */
+	void deleteSoftProduct(Long id);
 
 	// ========== BÚSQUEDAS POR IDENTIFICADORES ==========
 
@@ -218,4 +227,7 @@ public interface ProductService {
 	 */
 	Page<ProductResponseDTO> findWithFilters(ProductStatus status, String brand, String name, String country, Pageable pageable);
 
+	/** Búsqueda de todas las marcas disponibles en el sistema
+	 * que tienen los productos */
+	ProductBrandResponse getAllBrandsProducts();
 }

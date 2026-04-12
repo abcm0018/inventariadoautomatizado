@@ -186,6 +186,14 @@ public interface UserService {
 	Page<UserSummaryDTO> findActiveUsers(Pageable pageable);
 
 	/**
+	 * Lista usuarios que requieren gestión con paginación
+	 *
+	 * @param pageable Configuración de paginación
+	 * @return Página de usuarios que requieren gestión
+	 */
+	Page<UserSummaryDTO> findManagementUsers(Pageable pageable);
+
+	/**
 	 * Busca usuarios bloqueados
 	 *
 	 * @return Lista de usuarios bloqueados

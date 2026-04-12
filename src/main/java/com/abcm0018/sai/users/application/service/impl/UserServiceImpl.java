@@ -8,6 +8,7 @@ import com.abcm0018.sai.timesheet.domain.repository.TimesheetRepository;
 import com.abcm0018.sai.users.application.mapper.UserMapper;
 import com.abcm0018.sai.users.domain.enums.Role;
 import com.abcm0018.sai.users.domain.entity.User;
+import com.abcm0018.sai.users.domain.enums.Status;
 import com.abcm0018.sai.users.domain.repository.UserRepository;
 import com.abcm0018.sai.users.exceptions.UserServiceException;
 import com.abcm0018.sai.users.application.service.UserService;
@@ -250,6 +251,10 @@ public class UserServiceImpl implements UserService {
 			validateUniqueEmail(requestDTO.getEmail());
 		}
 
+		if (requestDTO.getStatus() != null) {
+			applyStatusToEntity(requestDTO.getStatus(), existingUser);
+		}
+
 		// Actualizar usando el mapper (solo campos no nulos)
 		userMapper.updateEntityFromRequest(requestDTO, existingUser);
 
@@ -283,6 +288,10 @@ public class UserServiceImpl implements UserService {
 		log.info("Desactivando usuario {}", id);
 
 		User user = findUserEntityById(id);
+
+		if(user.isBlocked()){
+			throw new UserServiceException(CustomErrorCode.BAD_REQUEST, "Usuario con número de empleado: " + user.getEmployeeNumber() + " no se puede borrar debido a que esta bloqueado", HttpStatus.BAD_REQUEST);
+		}
 
 		// Soft delete: marcar como inactivo
 		user.setActive(false);
@@ -674,6 +683,23 @@ public class UserServiceImpl implements UserService {
 	}
 
 	/**
+	 * Lista usuarios que requieren gestión con paginación
+	 *
+	 * @param pageable Configuración de paginación
+	 * @return Página de usuarios que requieren gestion
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public Page<UserSummaryDTO> findManagementUsers(Pageable pageable) {
+		log.debug("Listando usuarios que requieren gestión - Página: {}", pageable.getPageNumber());
+
+		Page<User> users = userRepository.findManagementUsers(pageable);
+
+		return users.map(userMapper::toSummary);
+	}
+
+
+	/**
 	 * Busca usuarios bloqueados
 	 *
 	 * @return Lista de usuarios bloqueados
@@ -977,6 +1003,8 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
+	
+
 	/**
 	 * Genera el siguiente número de empleado disponible
 	 * <p>
@@ -1181,6 +1209,34 @@ public class UserServiceImpl implements UserService {
 		} catch (Exception e) {
 			log.error("Error publicando evento PasswordResetEvent: {}", e.getMessage(), e);
 			// El reset se completó, solo falló la notificación
+		}
+	}
+
+	/**
+	 * Método privado para mapear el Enum Status a los campos booleanos de User
+	 */
+	private void applyStatusToEntity(Status status, User user) {
+		switch (status) {
+			case ACTIVE -> {
+				user.setActive(true);
+				user.setBlocked(false);
+				user.setExpired(false);
+			}
+			case INACTIVE -> {
+				user.setActive(false);
+				user.setBlocked(false);
+				user.setExpired(false);
+			}
+			case BLOCKED -> {
+				user.setActive(false); // Si está bloqueado, no debería estar activo
+				user.setBlocked(true);
+				user.setExpired(false);
+			}
+			case EXPIRED -> {
+				user.setActive(false);
+				user.setBlocked(false);
+				user.setExpired(true);
+			}
 		}
 	}
 

@@ -2,7 +2,10 @@ package com.abcm0018.sai.productos.infrastructure;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
+import com.abcm0018.sai.productos.application.dtos.*;
+import com.abcm0018.sai.productos.domain.enums.ProductCountry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -12,10 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import com.abcm0018.sai.productos.application.dtos.ProductDetailResponseDTO;
-import com.abcm0018.sai.productos.application.dtos.ProductRequestDTO;
-import com.abcm0018.sai.productos.application.dtos.ProductResponseDTO;
-import com.abcm0018.sai.productos.application.dtos.UpdateProductRequestDTO;
 import com.abcm0018.sai.productos.application.service.ProductService;
 import com.abcm0018.sai.productos.domain.enums.ProductStatus;
 import com.abcm0018.sai.shared.response.ResponseBuilder;
@@ -150,7 +149,7 @@ public class ProductController {
 	 * Restricción: No se puede eliminar si tiene niveles de embalaje asociados
 	 */
 	@CrossOrigin
-	@DeleteMapping("/{id}")
+	@DeleteMapping("/{id}/permanent")
 	@PreAuthorize("hasRole('ADMIN')")
 	@Operation(
 			summary = "Eliminar producto",
@@ -164,6 +163,32 @@ public class ProductController {
 		productService.deleteProduct(id);
 
 		return ResponseBuilder.withDeletedElements(HttpStatus.OK, true, 1, "Producto eliminado exitosamente");
+	}
+
+	/**
+	 * Desactivar un producto (soft delete)
+	 * Marca al producto como discontinuo pero mantiene sus datos
+	 */
+	@CrossOrigin
+	@DeleteMapping("/{id}")
+	@PreAuthorize("hasRole('ADMIN')")
+	@Operation(
+			summary = "Desactivar producto",
+			description = "Soft delete: marca al producto como discontinuo. "
+	)
+	public StandardResponse<Void> deleteSoftProduct(
+			@PathVariable @Parameter(description = "ID del producto") Long id) {
+
+		log.info("Desactivando producto {}", id);
+
+		productService.deleteSoftProduct(id);
+
+		return ResponseBuilder.withDeletedElements(
+				HttpStatus.OK,
+				true,
+				1,
+				"Producto desactivado exitosamente"
+		);
 	}
 
 	/**
@@ -452,5 +477,49 @@ public class ProductController {
 
 		return ResponseBuilder.with(HttpStatus.OK, true, message, exists);
 	}
+
+	@CrossOrigin
+	@GetMapping("/status")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
+	@Operation(
+			summary = "Listar estados disponibles",
+			description = "Obtiene los estados de cuenta con su valor técnico y nombre amigable"
+	)
+	public StandardResponse<ProductStatusResponse> getAvailableStatus() {
+		Set<String> statusStr = ProductStatus.getProductStatus();
+		return ResponseBuilder.with(HttpStatus.OK, true, "Estados recuperados correctamente", new ProductStatusResponse(statusStr));
+	}
+
+	@CrossOrigin
+	@GetMapping("/countries") // Endpoint: /api/v1/users/status
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
+	@Operation(
+			summary = "Listar paises disponibles",
+			description = "Obtiene los estados de cuenta con su valor técnico y nombre amigable"
+	)
+	public StandardResponse<ProductCountryResponse> getAvailableCountries() {
+		log.info("Petición REST para obtener todos los estados disponibles");
+
+		List<String> countriesStr = ProductCountry.getProductCountries().stream().map(status -> status.name()  + "|" + status.getDisplayCountry()).toList();
+
+		return ResponseBuilder.with(HttpStatus.OK, true, "Estados recuperados correctamente", new ProductCountryResponse(countriesStr));
+	}
+
+	@CrossOrigin
+	@GetMapping("/brand") // Endpoint: /api/v1/users/status
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
+	@Operation(
+			summary = "Listar las marcas disponibles",
+			description = "Obtiene las marcas de cuenta con su valor técnico y nombre amigable"
+	)
+	public StandardResponse<ProductBrandResponse> getAvailableBrand() {
+		log.info("Petición REST para obtener todos las marcas de productos disponibles");
+
+		ProductBrandResponse brands = productService.getAllBrandsProducts();
+
+		return ResponseBuilder.with(HttpStatus.OK, true, "Marcas recuperadas correctamente", brands);
+	}
+
+
 
 }

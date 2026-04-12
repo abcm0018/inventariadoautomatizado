@@ -74,6 +74,9 @@ public class User implements UserDetails, Serializable {
 	@Column(name = "ACTIVE", nullable = false)
 	private boolean active = true;
 
+	@Column(name = "INACTIVE", nullable = false)
+	private boolean inactive = false;
+
 	@Column(name = "BLOCKED", nullable = false)
 	private boolean blocked = false;
 

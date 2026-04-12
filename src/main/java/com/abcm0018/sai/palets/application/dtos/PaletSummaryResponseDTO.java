@@ -3,6 +3,7 @@ package com.abcm0018.sai.palets.application.dtos;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -44,6 +45,15 @@ public class PaletSummaryResponseDTO implements Serializable {
 
 	@JsonProperty(value = "product_brand")
 	private String productBrand;
+
+	@JsonProperty(value = "scanned_at")
+	private LocalDateTime createdAt;
+
+	@JsonProperty(value = "employee_number")
+	private String employeeNumber;
+
+	@JsonProperty(value = "shift")
+	private String shift;
 
 	@JsonProperty(value = "days_until_expiry")
 	private Long daysUntilExpiry;
