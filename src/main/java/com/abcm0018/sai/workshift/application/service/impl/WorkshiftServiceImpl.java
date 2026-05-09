@@ -3,6 +3,7 @@ package com.abcm0018.sai.workshift.application.service.impl;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -114,42 +115,50 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 	public WorkshiftResponseDTO updateWorkshift(Long id, UpdateWorkshiftRequestDTO requestDTO) {
 		log.warn("Actualizando workshift {} manualmente - Motivo: {}", id, requestDTO.getReason());
 
-		if (StringUtils.isEmpty(requestDTO.getReason())) {
+		if (StringUtils.isBlank(requestDTO.getReason())) {
 			throw new WorkshiftServiceException(
 					CustomErrorCode.BAD_REQUEST,
 					"Debe proporcionar un motivo para actualizar un turno de forma manual", HttpStatus.BAD_REQUEST);
 		}
 
-		Workshift workshift = getWorkshiftEntityById(id);
+		Workshift currentWorkshift = getWorkshiftEntityById(id);
 
 		// Check de concurrencia
 		// Comporamos la version de la BD con la versión que tenía el usuario en su pantalla
-		if (!workshift.getVersion().equals(requestDTO.getVersion())) {
+		if (requestDTO.getVersion() != null && !Objects.equals(requestDTO.getVersion(), currentWorkshift.getVersion())) {
 			throw new WorkshiftServiceException(CustomErrorCode.CONFLICT,
-					"El turno ha sido modificado por otro usuario miestras estabas editando",
+					"El registro ha sido modificado por otro usuario. Por favor, recargue la página.",
 					HttpStatus.CONFLICT);
 		}
 
-		Shift newShift = null;
-
+		Shift effectiveShift = currentWorkshift.getShift();
+		// Si no viene ID nuevo, usamos el que ya tiene la entidad.
 		if (requestDTO.getShiftId() != null) {
-			newShift = shiftRepository
+			effectiveShift = shiftRepository
 					.findById(requestDTO.getShiftId())
 					.orElseThrow(() -> new WorkshiftServiceException(
 							CustomErrorCode.NOT_FOUND, "No se ha encontrado el turno", HttpStatus.NOT_FOUND)
 					);
-
-			workshift.setShift(newShift);
 		}
 
-		if (requestDTO.getDate() != null) {
-			validateNoConflict(workshift.getUser(), requestDTO.getDate(), newShift, id);
-			workshift.setDate(requestDTO.getDate());
+		LocalDate effectiveDate = requestDTO.getDate() != null ? requestDTO.getDate() : currentWorkshift.getDate();
+
+		// Validamos si el cambio es legal según la hora actual y el estado del turno
+		validateShiftChangeRules(currentWorkshift, effectiveShift, effectiveDate);
+
+		// Validación de negocio (conflictos)
+		boolean isDateChange = !effectiveDate.equals(currentWorkshift.getDate());
+		boolean isShiftChange = !effectiveShift.equals(currentWorkshift.getShift());
+
+		if (isShiftChange || isDateChange) {
+			validateNoConflict(currentWorkshift.getUser(), effectiveDate, effectiveShift, id);
 		}
 
-		Workshift updated = workshiftRepository.save(workshift);
+		currentWorkshift.setDate(effectiveDate);
+		currentWorkshift.setShift(effectiveShift);
+		Workshift updated = workshiftRepository.save(currentWorkshift);
 
-		log.warn("Workshift {} actualizado manualmente | Motivo: {}", id, requestDTO.getReason());
+		log.warn("AUDIT: Workshift {} actualizado manualmente | Motivo: {}", id, requestDTO.getReason());
 
 		// TODO: Registrar en auditoría
 		// auditService.logWorkshiftUpdate(updated, requestDTO.getReason());
@@ -330,6 +339,55 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 		return foundShift != null ? Optional.of(foundShift) : Optional.empty();
 	}
 
+	/**
+	 * Valida las reglas estrictas de tiempo:
+	 * 1. No se pueden modificar turnos de días pasados.
+	 * 2. Si es HOY:
+	 * - El turno origen no debe haber comenzado.
+	 * - El turno destino no debe haber comenzado o pasado.
+	 */
+	private void validateShiftChangeRules(Workshift currentAssignment, Shift targetShift, LocalDate targetDate) {
+		LocalDate today = LocalDate.now();
+
+		// REGLA 1: Bloqueo de historial pasado
+		if (targetDate.isBefore(today)) {
+			throw new WorkshiftServiceException(CustomErrorCode.BAD_REQUEST,
+					"No está permitido modificar ni asignar turno en fechas pasdas", HttpStatus.BAD_REQUEST);
+		}
+
+		// Si la adignación original era de un día pasado
+		// generalmente se prohíbe cambiar la historia, salvo que sea corrección de error
+		if (currentAssignment.getDate().isBefore(today)) {
+			throw new WorkshiftServiceException(CustomErrorCode.BAD_REQUEST,
+					"No se puede modificar un registro histórico (fechas pasadas).", HttpStatus.BAD_REQUEST);
+		}
+
+		// Si es futuro, seguimos con la modificación
+		if (targetDate.isAfter(today)) {
+			return;
+		}
+
+		// REGLA 2: Lógica del "Mismo Día" (Same Day Policy)
+		if (targetDate.equals(today)) {
+			LocalTime now = LocalTime.now();
+			Shift currentShift = currentAssignment.getShift();
+
+			// Condición A: El turno ACTUAL (Origen) no debe haber comenzado
+			if (now.equals(currentShift.getStartTime()) || now.isAfter(currentShift.getStartTime())) {
+				throw new WorkshiftServiceException(CustomErrorCode.CONFLICT,
+						String.format("El turno actual (%s) ya ha comenzado. No se permiten cambios una vez iniciada la jornada.",
+								currentShift.getShiftType().getDisplayName()), HttpStatus.CONFLICT);
+			}
+
+			// Condición B: El turno NUEVO (Destino) no deber haber comenzado
+			if (now.equals(targetShift.getStartTime()) || now.isAfter(targetShift.getStartTime())) {
+				throw new WorkshiftServiceException(CustomErrorCode.CONFLICT,
+						String.format("El turno nuevo (%s) ya ha comenzado. No se permiten cambios una vez iniciada la jornada.",
+								targetShift.getShiftType().getDisplayName()), HttpStatus.CONFLICT);
+			}
+		}
+	}
+
 	private PlanningContext preparePlanningContext(LocalDate start, LocalDate end) {
 
 		List<User> operators = userRepository.findByRoleAndActiveTrue(Role.OPERATOR);
@@ -446,15 +504,14 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 				.orElseThrow(() -> new WorkshiftServiceException(CustomErrorCode.NOT_FOUND, "Asignación de turno no encontrada con ID: " + id, HttpStatus.NOT_FOUND));
 	}
 
-	private void validateNoConflict(User user, LocalDate date, Shift shift, Long excludeId) {
-		List<Workshift> existing = workshiftRepository.findPotentialConflicts(user, date, shift);
+	private void validateNoConflict(User user, LocalDate date, Shift shift, Long currentWorkhiftId) {
+		// Regla: "Un turno por día"
+		boolean exists = workshiftRepository.existsByUserAndDateAndIdNot(user, date, currentWorkhiftId);
 
-		if (excludeId != null) {
-			existing = existing.stream().filter(w -> !w.getId().equals(excludeId)).toList();
-		}
-
-		if (!existing.isEmpty()) {
-			log.warn("ADVERTENCIA: El usuario {} ya tiene {} turno(s) para la fecha {}", user.getId(), existing.size(), date);
+		if (exists) {
+			throw new WorkshiftServiceException(CustomErrorCode.CONFLICT,
+					"El usuario " + user.getEmployeeNumber() + " ya tiene un turno asignado para la fecha " + date,
+					HttpStatus.CONFLICT);
 		}
 	}
 
