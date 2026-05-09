@@ -1,0 +1,296 @@
+{
+  "info": {
+    "name": "Inventario Automatizado - Product Pack Levels API",
+    "description": "Colección completa de endpoints para gestión de niveles de embalaje (ProductPackLevel). Cada nivel define las propiedades físicas y logísticas de un embalaje: UNIDAD, CAJA o PALET.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Pack Level CRUD",
+      "description": "Operaciones CRUD de niveles de embalaje.",
+      "item": [
+        {
+          "name": "Create Pack Level",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": {{productId}},\n  \"gtin\": \"14567890123450\",\n  \"packingLevel\": \"PALET\",\n  \"netWeight\": 500.00,\n  \"heightMM\": 1200,\n  \"widthMM\": 800,\n  \"unitsInLevel\": 120,\n  \"stackingLimit\": 3,\n  \"boxesPerPalet\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels"]
+            },
+            "description": "Crea un nuevo nivel de embalaje con validaciones logísticas. Solo ADMIN. Los niveles disponibles son: UNIDAD, CAJA, PALET."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pack Level by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/{{packLevelId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "{{packLevelId}}"]
+            },
+            "description": "Obtiene información completa del nivel incluyendo cálculos de negocio. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pack Level by GTIN",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/gtin/14567890123450",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "gtin", "14567890123450"]
+            },
+            "description": "Búsqueda principal usada para escaneo RFID y lectura de códigos logísticos GS1. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Pack Levels (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels?page=0&size=20&sort=createdAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc"
+                }
+              ]
+            },
+            "description": "Lista todos los niveles de embalaje con paginación. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Pack Level",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"netWeight\": 510.00,\n  \"heightMM\": 1250,\n  \"widthMM\": 800,\n  \"unitsInLevel\": 125,\n  \"stackingLimit\": 3,\n  \"boxesPerPalet\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/{{packLevelId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "{{packLevelId}}"]
+            },
+            "description": "Actualiza propiedades físicas (peso, dimensiones, límites). GTIN, producto y tipo de embalaje NO son actualizables. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Pack Level",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/{{packLevelId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "{{packLevelId}}"]
+            },
+            "description": "Elimina un nivel de embalaje. Solo se puede eliminar si no tiene palets asociados en el inventario. Solo ADMIN."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pack Levels by Product",
+      "description": "Consultas de niveles de embalaje filtrados por producto.",
+      "item": [
+        {
+          "name": "Get Pack Levels by Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/product/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "product", "{{productId}}"]
+            },
+            "description": "Retorna todos los niveles de embalaje disponibles para un producto específico. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Count Pack Levels by Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/product/{{productId}}/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "product", "{{productId}}", "count"]
+            },
+            "description": "Retorna el número de niveles de embalaje configurados para el producto. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Product Has Pack Levels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/product/{{productId}}/has-levels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "product", "{{productId}}", "has-levels"]
+            },
+            "description": "Retorna true si el producto tiene al menos un nivel de embalaje configurado. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pack Levels by Product and Packing Level Type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/product/{{productId}}/type/PALET",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "product", "{{productId}}", "type", "PALET"]
+            },
+            "description": "Obtiene solo los niveles de tipo específico (UNIDAD, CAJA, PALET) para un producto. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pack Levels by Type",
+      "description": "Consultas de niveles de embalaje por tipo de embalaje.",
+      "item": [
+        {
+          "name": "Get Pack Levels by Packing Level Type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/type/PALET",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "type", "PALET"]
+            },
+            "description": "Retorna todos los niveles del tipo especificado (UNIDAD, CAJA, PALET) del sistema. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Audit & Validations",
+      "description": "Consultas de auditoría y validaciones de configuración.",
+      "item": [
+        {
+          "name": "Get Recently Created Pack Levels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/recently-created?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "recently-created"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Número de registros (por defecto 10)"
+                }
+              ]
+            },
+            "description": "Retorna los últimos niveles de embalaje creados en el sistema. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recently Modified Pack Levels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/recently-modified?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "recently-modified"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Número de registros (por defecto 10)"
+                }
+              ]
+            },
+            "description": "Retorna los últimos niveles de embalaje modificados en el sistema. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Check GTIN Availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pack-levels/exists/gtin/14567890123450",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "pack-levels", "exists", "gtin", "14567890123450"]
+            },
+            "description": "Retorna true si el GTIN ya existe en el sistema (para validación antes de crear). Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "packLevelId",
+      "value": "1"
+    },
+    {
+      "key": "productId",
+      "value": "1"
+    }
+  ]
+}

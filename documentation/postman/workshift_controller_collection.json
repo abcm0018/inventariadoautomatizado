@@ -3,7 +3,7 @@
     "name": "Inventario Automatizado - Workshifts API",
     "description": "Colección completa de endpoints para gestión de asignaciones de turnos (Workshifts). NOTA: La planificación automática se ejecuta mediante CRON cada viernes a las 18:00.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "2.0.0"
+    "version": "2.1.0"
   },
   "auth": {
     "type": "bearer",
@@ -160,43 +160,6 @@
             "description": "Búsqueda de turnos usando query parameters. Permite filtrar por operario, fecha, tipo, etc. Soporta paginación y ordenamiento."
           },
           "response": []
-        },
-        {
-          "name": "Advanced Search with Body (POST /search)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": 1,\n  \"shiftId\": 2,\n  \"shiftType\": \"MORNING\",\n  \"startDate\": \"2025-02-01\",\n  \"endDate\": \"2025-02-28\",\n  \"hasClockings\": true\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/workshifts/search?page=0&size=20&sort=date,desc",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "workshifts", "search"],
-              "query": [
-                {
-                  "key": "page",
-                  "value": "0"
-                },
-                {
-                  "key": "size",
-                  "value": "20"
-                },
-                {
-                  "key": "sort",
-                  "value": "date,desc"
-                }
-              ]
-            },
-            "description": "Búsqueda avanzada combinando múltiples criterios en el body. Todos los filtros son opcionales y se pueden combinar."
-          },
-          "response": []
         }
       ]
     },
@@ -248,7 +211,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "workshifts", "generate-schedule"]
             },
-            "description": "⚠️ SOLO PARA TESTING O EMERGENCIAS. Genera planificación de la próxima semana manualmente. En producción esto se ejecuta automáticamente con CRON cada viernes a las 18:00. Requiere rol ADMIN."
+            "description": "SOLO PARA TESTING O EMERGENCIAS. Genera planificación de la próxima semana manualmente. En producción esto se ejecuta automáticamente con CRON cada viernes a las 18:00. Requiere rol ADMIN."
           },
           "response": []
         },
@@ -267,6 +230,16 @@
           "response": []
         }
       ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "workshiftId",
+      "value": "1"
+    },
+    {
+      "key": "userId",
+      "value": "1"
     }
   ]
 }

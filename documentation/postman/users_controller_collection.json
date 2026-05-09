@@ -3,7 +3,7 @@
     "name": "Inventario Automatizado - Users API",
     "description": "Colección completa de endpoints para gestión de usuarios del sistema. Usa variables de environment compartidas.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "auth": {
     "type": "bearer",
@@ -18,7 +18,7 @@
   "item": [
     {
       "name": "User Management",
-      "description": "Operaciones CRUD básicas de usuarios",
+      "description": "Operaciones CRUD básicas de usuarios.",
       "item": [
         {
           "name": "Create User",
@@ -67,7 +67,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "{{userId}}", "details"]
             },
-            "description": "Detalles completos incluyendo estadísticas de turnos y palets escaneados"
+            "description": "Detalles completos incluyendo estadísticas de turnos y palets escaneados."
           },
           "response": []
         },
@@ -154,7 +154,7 @@
     },
     {
       "name": "User Lookups",
-      "description": "Búsqueda de usuarios por diferentes criterios",
+      "description": "Búsqueda de usuarios por diferentes criterios.",
       "item": [
         {
           "name": "Get User by Employee Number",
@@ -166,7 +166,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "employee", "EMP001"]
             },
-            "description": "Busca usuario por número de empleado único"
+            "description": "Busca usuario por número de empleado único."
           },
           "response": []
         },
@@ -180,7 +180,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "email", "usuario@ejemplo.com"]
             },
-            "description": "Busca usuario por email"
+            "description": "Busca usuario por email."
           },
           "response": []
         }
@@ -188,7 +188,7 @@
     },
     {
       "name": "Password Management",
-      "description": "Gestión de contraseñas",
+      "description": "Gestión de contraseñas.",
       "item": [
         {
           "name": "Change Password",
@@ -240,7 +240,7 @@
     },
     {
       "name": "User Status Management",
-      "description": "Control de estados de usuarios",
+      "description": "Control de estados de usuarios.",
       "item": [
         {
           "name": "Activate User",
@@ -312,7 +312,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "{{userId}}", "unblock"]
             },
-            "description": "Quita el bloqueo de seguridad y reactiva al usuario automáticamente"
+            "description": "Quita el bloqueo de seguridad y reactiva al usuario automáticamente."
           },
           "response": []
         }
@@ -320,7 +320,7 @@
     },
     {
       "name": "User Filtering & Search",
-      "description": "Búsqueda y filtrado avanzado de usuarios",
+      "description": "Búsqueda y filtrado avanzado de usuarios.",
       "item": [
         {
           "name": "Get Users by Role",
@@ -332,7 +332,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "role", "OPERATOR"]
             },
-            "description": "Retorna usuarios con rol específico: ADMIN, SUPERVISOR, OPERATOR, WAREHOUSE_KEEPER"
+            "description": "Retorna usuarios con rol específico: ADMIN, SUPERVISOR, OPERATOR, WAREHOUSE_KEEPER."
           },
           "response": []
         },
@@ -351,30 +351,56 @@
           "response": []
         },
         {
-          "name": "Get Active Admins",
+          "name": "Get Users by Management Roles",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/users/admins/active",
+              "raw": "{{baseUrl}}/api/v1/users/management",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "admins", "active"]
+              "path": ["api", "v1", "users", "management"]
             },
-            "description": "Lista de administradores activos del sistema"
+            "description": "Lista usuarios con roles de gestión (ADMIN y SUPERVISOR)."
           },
           "response": []
         },
         {
-          "name": "Get Active Supervisors",
+          "name": "Get All User Roles",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/users/supervisors/active",
+              "raw": "{{baseUrl}}/api/v1/users/roles",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "supervisors", "active"]
+              "path": ["api", "v1", "users", "roles"]
             },
-            "description": "Lista de supervisores activos del sistema"
+            "description": "Retorna la lista de roles disponibles en el sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Users by Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/status?active=true&blocked=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "status"],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true",
+                  "description": "Filtrar por estado activo"
+                },
+                {
+                  "key": "blocked",
+                  "value": "false",
+                  "description": "Filtrar por estado bloqueado"
+                }
+              ]
+            },
+            "description": "Filtra usuarios según su estado (activo, bloqueado)."
           },
           "response": []
         },
@@ -388,7 +414,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "role", "OPERATOR", "count"]
             },
-            "description": "Cantidad total de usuarios con el rol especificado"
+            "description": "Cantidad total de usuarios con el rol especificado."
           },
           "response": []
         },
@@ -416,21 +442,7 @@
                 }
               ]
             },
-            "description": "Página de usuarios con estado activo = true"
-          },
-          "response": []
-        },
-        {
-          "name": "Get Blocked Users",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/users/blocked",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "users", "blocked"]
-            },
-            "description": "Todos los usuarios bloqueados por seguridad"
+            "description": "Página de usuarios con estado activo = true."
           },
           "response": []
         },
@@ -444,7 +456,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "active", "count"]
             },
-            "description": "Total de usuarios con estado activo"
+            "description": "Total de usuarios con estado activo."
           },
           "response": []
         },
@@ -477,7 +489,7 @@
                 }
               ]
             },
-            "description": "Búsqueda avanzada combinando múltiples criterios"
+            "description": "Búsqueda avanzada combinando múltiples criterios."
           },
           "response": []
         },
@@ -497,7 +509,7 @@
                 }
               ]
             },
-            "description": "Búsqueda parcial en nombre y apellido del usuario"
+            "description": "Búsqueda parcial en nombre y apellido del usuario."
           },
           "response": []
         },
@@ -511,7 +523,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "working-on", "2025-10-15"]
             },
-            "description": "Usuarios con turno asignado para la fecha especificada (formato: YYYY-MM-DD)"
+            "description": "Usuarios con turno asignado para la fecha especificada (formato: YYYY-MM-DD)."
           },
           "response": []
         }
@@ -519,7 +531,7 @@
     },
     {
       "name": "Statistics & Reports",
-      "description": "Estadísticas y métricas de usuarios",
+      "description": "Estadísticas y métricas de usuarios.",
       "item": [
         {
           "name": "Get Global Statistics",
@@ -551,7 +563,7 @@
                 }
               ]
             },
-            "description": "Top usuarios ordenados por cantidad de palets escaneados"
+            "description": "Top usuarios ordenados por cantidad de palets escaneados."
           },
           "response": []
         }
@@ -559,7 +571,7 @@
     },
     {
       "name": "User Validations",
-      "description": "Validaciones y verificaciones de usuarios",
+      "description": "Validaciones y verificaciones de usuarios.",
       "item": [
         {
           "name": "Check Employee Number Exists",
@@ -571,7 +583,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "exists", "employee", "EMP001"]
             },
-            "description": "Verifica si existe un usuario con ese número de empleado"
+            "description": "Verifica si existe un usuario con ese número de empleado."
           },
           "response": []
         },
@@ -585,7 +597,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "exists", "email", "usuario@ejemplo.com"]
             },
-            "description": "Verifica si existe un usuario con ese email"
+            "description": "Verifica si existe un usuario con ese email."
           },
           "response": []
         },
@@ -599,7 +611,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "{{userId}}", "can-work"]
             },
-            "description": "Valida que sea operador, esté activo, no bloqueado y no expirado"
+            "description": "Valida que sea operador, esté activo, no bloqueado y no expirado."
           },
           "response": []
         },
@@ -613,11 +625,17 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "users", "{{userId}}", "is-valid"]
             },
-            "description": "Valida que esté activo, no bloqueado y no expirado"
+            "description": "Valida que esté activo, no bloqueado y no expirado."
           },
           "response": []
         }
       ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "userId",
+      "value": "1"
     }
   ]
 }

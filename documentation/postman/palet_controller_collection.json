@@ -44,16 +44,16 @@
           "response": []
         },
         {
-          "name": "Get Recent 100 Palets (GET /recent-100)",
+          "name": "Get Recent 7 Palets (GET /recent-7)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/palets/recent-100",
+              "raw": "{{baseUrl}}/api/v1/palets/recent-7",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "palets", "recent-100"]
+              "path": ["api", "v1", "palets", "recent-7"]
             },
-            "description": "Obtiene los 100 palets más recientes para notificaciones en tiempo real."
+            "description": "Obtiene los 7 palets más recientes para notificaciones en tiempo real."
           },
           "response": []
         },
@@ -379,7 +379,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "palets", "expiring-soon"]
             },
-            "description": "⚠️ Retorna palets que caducan en los próximos 7 días."
+            "description": "Retorna palets que caducan en los próximos 7 días."
           },
           "response": []
         },
@@ -393,7 +393,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "palets", "expiring-critical"]
             },
-            "description": "🚨 URGENTE: Retorna palets que caducan en los próximos 3 días."
+            "description": "URGENTE: Retorna palets que caducan en los próximos 3 días."
           },
           "response": []
         },
@@ -407,7 +407,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "palets", "expired"]
             },
-            "description": "❌ Retorna palets que ya han caducado. RETIRAR INMEDIATAMENTE de inventario."
+            "description": "Retorna palets que ya han caducado. RETIRAR INMEDIATAMENTE de inventario."
           },
           "response": []
         },

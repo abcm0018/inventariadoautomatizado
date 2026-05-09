@@ -1,0 +1,312 @@
+{
+  "info": {
+    "name": "Inventario Automatizado - Emails API (Auditoría)",
+    "description": "Colección de endpoints para administración y auditoría del módulo de email. Los emails automáticos se disparan mediante EventListeners. Estos endpoints son para gestión de plantillas, histórico, reintentos y pruebas. Solo accesibles por ADMIN.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Email Templates",
+      "description": "Consulta y búsqueda de plantillas de email disponibles en el sistema.",
+      "item": [
+        {
+          "name": "Get All Email Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "templates"]
+            },
+            "description": "Retorna todas las plantillas disponibles en el sistema ordenadas alfabéticamente. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Email Template by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/templates/{{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "templates", "{{templateId}}"]
+            },
+            "description": "Retorna los detalles completos de una plantilla específica por su ID. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Email Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/templates/search?query=palet",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "templates", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "palet",
+                  "description": "Palabra clave para buscar en nombre y asunto de las plantillas"
+                }
+              ]
+            },
+            "description": "Busca en nombre y asunto de las plantillas. Solo ADMIN."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Email Logs (Histórico)",
+      "description": "Consulta y filtrado del histórico de emails enviados.",
+      "item": [
+        {
+          "name": "Get All Email Logs (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/logs?page=0&size=20&sort=sentAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "logs"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "sentAt,desc"
+                }
+              ]
+            },
+            "description": "Retorna el histórico paginado de todos los emails enviados. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Emails by Recipient",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/logs/recipient/operario@empresa.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "logs", "recipient", "operario@empresa.com"]
+            },
+            "description": "Retorna todos los emails enviados a una dirección específica. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Emails by Status (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/logs/status/FAILED?page=0&size=20&sort=sentAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "logs", "status", "FAILED"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "sentAt,desc"
+                }
+              ]
+            },
+            "description": "Filtra emails por estado: SENT, FAILED, PENDING, BOUNCED, SPAM. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Emails by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/logs/date-range?startDate=2025-05-01T00:00:00&endDate=2025-05-09T23:59:59",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "logs", "date-range"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01T00:00:00",
+                  "description": "Fecha de inicio (ISO 8601 con hora)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-09T23:59:59",
+                  "description": "Fecha de fin (ISO 8601 con hora)"
+                }
+              ]
+            },
+            "description": "Retorna los emails enviados entre las fechas especificadas. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Advanced Search Email Logs",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipient\": \"operario@empresa.com\",\n  \"emailType\": \"PALET_EXPIRY_ALERT\",\n  \"status\": \"SENT\",\n  \"startDate\": \"2025-05-01T00:00:00\",\n  \"endDate\": \"2025-05-09T23:59:59\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/logs/search?page=0&size=20&sort=sentAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "logs", "search"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "sentAt,desc"
+                }
+              ]
+            },
+            "description": "Búsqueda avanzada combinando múltiples criterios: destinatario, tipo de email, estado y rango de fechas. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Count Emails by Recipient in Period",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/logs/count-by-recipient?recipient=operario@empresa.com&startDate=2025-05-01T00:00:00&endDate=2025-05-09T23:59:59",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "logs", "count-by-recipient"],
+              "query": [
+                {
+                  "key": "recipient",
+                  "value": "operario@empresa.com",
+                  "description": "Dirección de email del destinatario"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01T00:00:00",
+                  "description": "Fecha de inicio (ISO 8601 con hora)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-09T23:59:59",
+                  "description": "Fecha de fin (ISO 8601 con hora)"
+                }
+              ]
+            },
+            "description": "Retorna el número de emails enviados a un destinatario en el rango de fechas. Solo ADMIN."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Email Operations (Admin)",
+      "description": "Operaciones de emergencia: reintentos, pruebas y reenvíos. Solo ADMIN.",
+      "item": [
+        {
+          "name": "Retry All Failed Emails",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/retry-failed",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "retry-failed"]
+            },
+            "description": "ADMIN ONLY. Intenta reenviar todos los emails que fallaron. Máximo 3 reintentos por email."
+          },
+          "response": []
+        },
+        {
+          "name": "Send Test Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipient\": \"admin@empresa.com\",\n  \"subject\": \"[TEST] Verificación de configuración SMTP\",\n  \"bodyHtml\": \"<h1>Email de prueba</h1><p>Si recibes este email, la configuración SMTP está correcta.</p><p>Enviado desde: Inventario Automatizado SAI</p>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/send-test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "send-test"]
+            },
+            "description": "ADMIN ONLY. Envía un email de prueba para validar la configuración SMTP del sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Resend Specific Email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/emails/resend/{{emailLogId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "emails", "resend", "{{emailLogId}}"]
+            },
+            "description": "ADMIN ONLY. Reenvía un email específico del histórico por su log ID. Para casos excepcionales."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "templateId",
+      "value": "1"
+    },
+    {
+      "key": "emailLogId",
+      "value": "1"
+    }
+  ]
+}

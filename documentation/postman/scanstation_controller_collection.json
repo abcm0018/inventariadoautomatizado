@@ -1,0 +1,120 @@
+{
+  "info": {
+    "name": "Inventario Automatizado - Scan Stations API",
+    "description": "Colección de endpoints para gestión de estaciones de escaneo RFID. Cada estación puede tener hasta 2 cámaras asociadas para lectura de palets.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Scan Station Management (CRUD)",
+      "description": "Operaciones CRUD para gestionar estaciones de escaneo RFID.",
+      "item": [
+        {
+          "name": "Create Scan Station",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stationCode\": \"STATION-A1\",\n  \"locationDesc\": \"Entrada almacén\",\n  \"camera1Id\": \"CAM-001\",\n  \"camera2Id\": \"CAM-002\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scanstations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scanstations"]
+            },
+            "description": "Crea una nueva estación de escaneo. Valida que el código de estación no exista. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Scan Station by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scanstations/{{scanStationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scanstations", "{{scanStationId}}"]
+            },
+            "description": "Obtiene los detalles de una estación de escaneo por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Scan Stations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scanstations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scanstations"]
+            },
+            "description": "Lista todas las estaciones de escaneo registradas en el sistema."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Scan Station",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stationCode\": \"STATION-A1-V2\",\n  \"locationDesc\": \"Entrada almacén principal\",\n  \"camera1Id\": \"CAM-001\",\n  \"camera2Id\": \"CAM-003\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scanstations/{{scanStationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scanstations", "{{scanStationId}}"]
+            },
+            "description": "Actualiza los datos de una estación de escaneo existente. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate Scan Station (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/scanstations/{{scanStationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "scanstations", "{{scanStationId}}"]
+            },
+            "description": "Desactiva una estación de escaneo sin eliminarla de la base de datos (soft delete). Solo ADMIN."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "scanStationId",
+      "value": "1"
+    }
+  ]
+}

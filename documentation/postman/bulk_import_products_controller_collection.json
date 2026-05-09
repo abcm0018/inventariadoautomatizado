@@ -3,7 +3,7 @@
     "name": "Inventario Automatizado - Products Bulk Import API",
     "description": "Colección para importación masiva de productos vía CSV/XLSX. Proceso asíncrono con polling de estado. Usa variables de environment compartidas.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "auth": {
     "type": "bearer",
@@ -37,25 +37,25 @@
                   "        // Guarda el jobId en environment",
                   "        try {",
                   "            pm.environment.set(\"jobId\", jobId);",
-                  "            console.log(\"✅ JobId guardado en ENVIRONMENT: \" + jobId);",
+                  "            console.log(\"JobId guardado en ENVIRONMENT: \" + jobId);",
                   "        } catch (e) {",
                   "            pm.collectionVariables.set(\"jobId\", jobId);",
-                  "            console.log(\"✅ JobId guardado en COLLECTION: \" + jobId);",
+                  "            console.log(\"JobId guardado en COLLECTION: \" + jobId);",
                   "        }",
                   "        ",
-                  "        console.log(\"\\n📋 Job Information:\");",
+                  "        console.log(\"\\nJob Information:\");",
                   "        console.log(\"   Job ID: \" + jobId);",
                   "        console.log(\"   Status: \" + jsonData.data.status);",
                   "        console.log(\"   Filename: \" + jsonData.data.filename);",
-                  "        console.log(\"\\n⏳ Use el endpoint 'Check Import Status' para monitorear el progreso\");",
+                  "        console.log(\"\\nUse el endpoint 'Check Import Status' para monitorear el progreso\");",
                   "    } else {",
-                  "        console.log(\"❌ La respuesta no contiene jobId\");",
+                  "        console.log(\"La respuesta no contiene jobId\");",
                   "    }",
                   "} else if (pm.response.code === 200) {",
-                  "    console.log(\"⚠️ Respuesta 200 OK en lugar de 202 ACCEPTED\");",
+                  "    console.log(\"Respuesta 200 OK en lugar de 202 ACCEPTED\");",
                   "    console.log(\"Esto puede indicar que el proceso fue síncrono\");",
                   "} else {",
-                  "    console.log(\"❌ Error en importación. Status code: \" + pm.response.code);",
+                  "    console.log(\"Error en importación. Status code: \" + pm.response.code);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -65,8 +65,8 @@
               "listen": "prerequest",
               "script": {
                 "exec": [
-                  "console.log(\"📤 Preparando importación masiva de productos...\");",
-                  "console.log(\"⚠️ IMPORTANTE: Asegúrate de seleccionar un archivo CSV o XLSX válido\");"
+                  "console.log(\"Preparando importación masiva de productos...\");",
+                  "console.log(\"IMPORTANTE: Asegúrate de seleccionar un archivo CSV o XLSX válido\");"
                 ],
                 "type": "text/javascript"
               }
@@ -91,7 +91,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "products", "bulk", "import"]
             },
-            "description": "**Inicia una importación masiva asíncrona de productos.**\n\n**Flujo:**\n1. Sube archivo CSV/XLSX\n2. Respuesta inmediata con HTTP 202 (ACCEPTED)\n3. Obtén jobId para consultar estado\n4. Usa polling para monitorear progreso\n\n**Formato CSV esperado:**\n```csv\nean,name,brand,format,countryOfOrigin,description,weight,status\n1234567890123,Coca-Cola,Coca-Cola,330ml,España,Bebida refrescante,0.33,ACTIVE\n9876543210987,Pepsi,PepsiCo,500ml,USA,Bebida cola,0.5,ACTIVE\n```\n\n**Solo accesible por ADMIN.**"
+            "description": "Inicia una importación masiva asíncrona de productos.\n\nFlujo:\n1. Sube archivo CSV/XLSX\n2. Respuesta inmediata con HTTP 202 (ACCEPTED)\n3. Obtén jobId para consultar estado\n4. Usa polling para monitorear progreso\n\nFormato CSV esperado:\nean,name,brand,format,countryOfOrigin,description,weight,status\n1234567890123,Coca-Cola,Coca-Cola,330ml,España,Bebida refrescante,0.33,ACTIVE\n\nSolo accesible por ADMIN."
           },
           "response": [
             {
@@ -143,54 +143,17 @@
                   "        var status = jsonData.data.status;",
                   "        var progress = jsonData.data.progress || {};",
                   "        ",
-                  "        console.clear();",
-                  "        console.log(\"\\n\" + \"=\".repeat(60));",
-                  "        console.log(\"📊 ESTADO DE IMPORTACIÓN\");",
-                  "        console.log(\"=\".repeat(60));",
-                  "        ",
-                  "        console.log(\"\\n🔹 Job ID: \" + jsonData.data.jobId);",
-                  "        console.log(\"🔹 Estado: \" + status);",
-                  "        console.log(\"🔹 Archivo: \" + jsonData.data.filename);",
+                  "        console.log(\"Job ID: \" + jsonData.data.jobId);",
+                  "        console.log(\"Estado: \" + status);",
+                  "        console.log(\"Archivo: \" + jsonData.data.filename);",
                   "        ",
                   "        if (progress.total) {",
                   "            var percentage = ((progress.processed / progress.total) * 100).toFixed(2);",
-                  "            console.log(\"\\n📈 Progreso:\");",
-                  "            console.log(\"   Total: \" + progress.total);",
-                  "            console.log(\"   Procesados: \" + progress.processed);",
-                  "            console.log(\"   Exitosos: \" + (progress.successful || 0));",
-                  "            console.log(\"   Fallidos: \" + (progress.failed || 0));",
-                  "            console.log(\"   Porcentaje: \" + percentage + \"%\");",
+                  "            console.log(\"Progreso: \" + percentage + \"%\");",
+                  "            console.log(\"Total: \" + progress.total + \" | Procesados: \" + progress.processed);",
+                  "            console.log(\"Exitosos: \" + (progress.successful || 0) + \" | Fallidos: \" + (progress.failed || 0));",
                   "        }",
                   "        ",
-                  "        console.log(\"\\n⏰ Tiempos:\");",
-                  "        console.log(\"   Inicio: \" + jsonData.data.startedAt);",
-                  "        if (jsonData.data.completedAt) {",
-                  "            console.log(\"   Finalización: \" + jsonData.data.completedAt);",
-                  "        }",
-                  "        ",
-                  "        // Mensajes según el estado",
-                  "        console.log(\"\\n\" + \"=\".repeat(60));",
-                  "        if (status === \"PENDING\") {",
-                  "            console.log(\"⏳ Estado: EN COLA - Esperando procesamiento\");",
-                  "        } else if (status === \"IN_PROGRESS\") {",
-                  "            console.log(\"⚙️ Estado: PROCESANDO - Continúa haciendo polling\");",
-                  "        } else if (status === \"COMPLETED\") {",
-                  "            console.log(\"✅ Estado: COMPLETADO - Importación finalizada exitosamente\");",
-                  "            if (progress.failed > 0) {",
-                  "                console.log(\"⚠️ Hay \" + progress.failed + \" registros con errores\");",
-                  "                if (jsonData.data.errorFileUrl) {",
-                  "                    console.log(\"📥 Descarga errores: \" + jsonData.data.errorFileUrl);",
-                  "                }",
-                  "            }",
-                  "        } else if (status === \"FAILED\") {",
-                  "            console.log(\"❌ Estado: FALLIDO - Error en la importación\");",
-                  "            if (jsonData.data.errorMessage) {",
-                  "                console.log(\"💬 Error: \" + jsonData.data.errorMessage);",
-                  "            }",
-                  "        }",
-                  "        console.log(\"=\".repeat(60) + \"\\n\");",
-                  "        ",
-                  "        // Guarda el errorFileUrl si existe",
                   "        if (jsonData.data.errorFileUrl) {",
                   "            try {",
                   "                pm.environment.set(\"errorFileUrl\", jsonData.data.errorFileUrl);",
@@ -213,7 +176,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "products", "bulk", "import", "status", "{{jobId}}"]
             },
-            "description": "**Consulta el estado de una importación en progreso (Polling).**\n\n**Uso:**\n1. Ejecuta después de iniciar la importación\n2. Repite cada 3-5 segundos hasta que complete\n3. Monitorea el progreso en la consola\n\n**Estados posibles:**\n- `PENDING`: En cola, esperando\n- `IN_PROGRESS`: Procesando registros\n- `COMPLETED`: Finalizado exitosamente\n- `FAILED`: Error crítico\n\n**Tip:** Usa Postman Runner con delay de 3s para polling automático.\n\n**Solo accesible por ADMIN.**"
+            "description": "Consulta el estado de una importación en progreso (Polling).\n\nEstados posibles:\n- PENDING: En cola, esperando\n- IN_PROGRESS: Procesando registros\n- COMPLETED: Finalizado exitosamente\n- FAILED: Error crítico\n\nSolo accesible por ADMIN."
           },
           "response": [
             {
@@ -272,31 +235,21 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "products", "bulk", "errors", "{{errorFilename}}"]
             },
-            "description": "**Descarga el archivo CSV con los registros que fallaron durante la importación.**\n\n**Contenido del archivo de errores:**\n- Registros originales que fallaron\n- Columna adicional con descripción del error\n- Formato CSV para fácil corrección\n\n**Uso:**\n1. Obtén el errorFileUrl del endpoint de status\n2. Copia el nombre del archivo (ej: `errors_550e8400...csv`)\n3. Actualiza la variable `errorFilename`\n4. Descarga el archivo\n\n**Respuesta:** Descarga directa del archivo (no JSON)."
+            "description": "Descarga el archivo CSV con los registros que fallaron durante la importación.\n\nUso:\n1. Obtén el errorFileUrl del endpoint de status\n2. Copia el nombre del archivo (ej: errors_550e8400...csv)\n3. Actualiza la variable errorFilename\n4. Descarga el archivo\n\nRespuesta: Descarga directa del archivo (no JSON)."
           },
           "response": []
         }
       ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "jobId",
+      "value": ""
     },
     {
-      "name": "Templates & Examples",
-      "description": "Plantillas y ejemplos de archivos CSV para importación",
-      "item": [
-        {
-          "name": "Get CSV Template Documentation",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/products/bulk/template",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "products", "bulk", "template"]
-            },
-            "description": "**Endpoint hipotético para obtener documentación del formato CSV.**\n\n**Si este endpoint no existe en tu API**, aquí está el formato esperado:\n\n**Columnas requeridas:**\n```csv\nean,name,brand,format,countryOfOrigin,description,weight,status\n```\n\n**Ejemplo de datos:**\n```csv\nean,name,brand,format,countryOfOrigin,description,weight,status\n1234567890123,Coca-Cola Original,Coca-Cola,330ml,España,Bebida refrescante de cola,0.33,ACTIVE\n9876543210987,Pepsi Regular,PepsiCo,500ml,USA,Refresco de cola,0.5,ACTIVE\n5555555555555,Fanta Naranja,Coca-Cola,2L,España,Refresco sabor naranja,2.0,ACTIVE\n```\n\n**Validaciones:**\n- `ean`: 13 dígitos, único\n- `name`: Texto, requerido\n- `brand`: Texto, requerido\n- `format`: Texto (ej: 330ml, 1L, 500g)\n- `countryOfOrigin`: País válido\n- `weight`: Decimal positivo (en KG)\n- `status`: ACTIVE, DISCONTINUED, TEMPORARY_OUT, PILOT\n\n**Nota:** Este endpoint es solo referencia. Elimínalo si no existe en tu API."
-          },
-          "response": []
-        }
-      ]
+      "key": "errorFilename",
+      "value": ""
     }
   ]
 }

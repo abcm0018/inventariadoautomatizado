@@ -1,0 +1,961 @@
+{
+  "info": {
+    "name": "Inventario Automatizado - Timesheets API (Fichajes)",
+    "description": "Colección completa de endpoints para gestión de fichajes y control horario. Los fichajes normales se realizan mediante check-in/check-out. Las operaciones manuales son solo para correcciones administrativas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Timesheet CRUD (Admin/Supervisor)",
+      "description": "Operaciones CRUD directas. SOLO para correcciones administrativas excepcionales.",
+      "item": [
+        {
+          "name": "Create Timesheet Manually (EXCEPCIONAL)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workshiftId\": 15,\n  \"checkInAt\": \"2025-05-09T07:05:00\",\n  \"checkOutAt\": \"2025-05-09T15:10:00\",\n  \"notes\": \"Registro manual por fallo en terminal de fichaje. Aprobado por supervisor.\",\n  \"status\": \"CLOSED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets"]
+            },
+            "description": "SOLO para correcciones administrativas. Los fichajes normales deben usar check-in/check-out. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Timesheet by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/{{timesheetId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "{{timesheetId}}"]
+            },
+            "description": "Obtiene un fichaje específico por su ID con información detallada."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Timesheets (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets?page=0&size=20&sort=checkInAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "checkInAt,desc"
+                }
+              ]
+            },
+            "description": "Lista todos los fichajes con paginación. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Timesheet (EXCEPCIONAL)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workshiftId\": 15,\n  \"checkInAt\": \"2025-05-09T07:00:00\",\n  \"checkOutAt\": \"2025-05-09T15:00:00\",\n  \"notes\": \"Corrección de hora de entrada. El empleado llegó a las 07:00 según cámaras de seguridad.\",\n  \"status\": \"CLOSED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/{{timesheetId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "{{timesheetId}}"]
+            },
+            "description": "SOLO para correcciones administrativas. Requiere justificación en el campo notes. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Timesheet",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/{{timesheetId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "{{timesheetId}}"]
+            },
+            "description": "Elimina un fichaje. Usar con precaución - los datos históricos se pierden. Solo ADMIN."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Check-In / Check-Out",
+      "description": "Operaciones estándar de registro de entrada y salida de empleados.",
+      "item": [
+        {
+          "name": "Check-In (Registrar Entrada)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/check-in/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "check-in", "{{userId}}"]
+            },
+            "description": "Registra la entrada de un empleado. Crea automáticamente un timesheet para el turno asignado del día. Detecta tardanzas automáticamente."
+          },
+          "response": []
+        },
+        {
+          "name": "Check-In with Specific Time (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/check-in/{{userId}}/at/2025-05-09T07:03:00",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "check-in", "{{userId}}", "at", "2025-05-09T07:03:00"]
+            },
+            "description": "Para correcciones administrativas. Permite especificar la hora exacta del check-in (formato ISO 8601). Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Check-Out (Registrar Salida)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/check-out/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "check-out", "{{userId}}"]
+            },
+            "description": "Registra la salida de un empleado. Cierra el timesheet abierto y calcula horas trabajadas. Detecta anomalías automáticamente."
+          },
+          "response": []
+        },
+        {
+          "name": "Check-Out with Specific Time (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/check-out/{{userId}}/at/2025-05-09T15:00:00",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "check-out", "{{userId}}", "at", "2025-05-09T15:00:00"]
+            },
+            "description": "Para correcciones administrativas. Permite especificar la hora exacta del check-out (formato ISO 8601). Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Timesheet Queries",
+      "description": "Consultas de fichajes por usuario.",
+      "item": [
+        {
+          "name": "Check if User Has Open Timesheet",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/user/{{userId}}/has-open",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "user", "{{userId}}", "has-open"]
+            },
+            "description": "Retorna true si el usuario tiene un timesheet sin check-out registrado."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Open Timesheet of User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/user/{{userId}}/open",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "user", "{{userId}}", "open"]
+            },
+            "description": "Retorna el último timesheet sin check-out del usuario, o null si no hay ninguno."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Timesheets by User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "user", "{{userId}}"]
+            },
+            "description": "Obtiene todos los fichajes de un usuario específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Timesheets (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/user/{{userId}}/paginated?page=0&size=20&sort=checkInAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "user", "{{userId}}", "paginated"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "checkInAt,desc"
+                }
+              ]
+            },
+            "description": "Obtiene los fichajes de un usuario con paginación."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Timesheets by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/user/{{userId}}/date-range?startDate=2025-05-01&endDate=2025-05-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "user", "{{userId}}", "date-range"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01",
+                  "description": "Fecha inicio (ISO DATE)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-31",
+                  "description": "Fecha fin (ISO DATE)"
+                }
+              ]
+            },
+            "description": "Obtiene los fichajes de un usuario en un rango de fechas."
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Timesheet on Specific Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/user/{{userId}}/date/2025-05-09",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "user", "{{userId}}", "date", "2025-05-09"]
+            },
+            "description": "Obtiene el fichaje de un usuario en una fecha específica (formato YYYY-MM-DD)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Total Worked Hours by User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/user/{{userId}}/total-hours?startDate=2025-05-01&endDate=2025-05-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "user", "{{userId}}", "total-hours"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-31"
+                }
+              ]
+            },
+            "description": "Calcula el total de horas trabajadas por un usuario en un período."
+          },
+          "response": []
+        },
+        {
+          "name": "Generate User Attendance Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/user/{{userId}}/attendance-report?startDate=2025-05-01&endDate=2025-05-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "user", "{{userId}}", "attendance-report"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-31"
+                }
+              ]
+            },
+            "description": "Genera reporte completo de asistencia de un usuario incluyendo estadísticas detalladas, puntualidad, horas trabajadas y anomalías."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Timesheet Filters by Status & Date",
+      "description": "Consultas de fichajes filtrados por estado y fecha.",
+      "item": [
+        {
+          "name": "Get Timesheets by Workshift",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/workshift/{{workshiftId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "workshift", "{{workshiftId}}"]
+            },
+            "description": "Obtiene el fichaje asociado a un workshift específico."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Timesheets by Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/status/OPEN",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "status", "OPEN"]
+            },
+            "description": "Obtiene todos los fichajes con un estado específico (OPEN, CLOSED, ANOMALY, CORRECTED, ARCHIVED). Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Timesheets by Status (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/status/ANOMALY/paginated?page=0&size=20&sort=checkInAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "status", "ANOMALY", "paginated"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "checkInAt,desc"
+                }
+              ]
+            },
+            "description": "Obtiene fichajes con el estado especificado, con paginación. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Count Timesheets by Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/status/OPEN/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "status", "OPEN", "count"]
+            },
+            "description": "Cuenta la cantidad de fichajes con el estado especificado. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Open Timesheets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/open",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "open"]
+            },
+            "description": "Retorna todos los fichajes que no tienen check-out registrado. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Closed Timesheets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/closed",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "closed"]
+            },
+            "description": "Retorna todos los fichajes con check-out registrado. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Timesheets by Date",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/date/2025-05-09",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "date", "2025-05-09"]
+            },
+            "description": "Obtiene todos los fichajes de una fecha específica (YYYY-MM-DD). Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Timesheets by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/date-range?startDate=2025-05-01&endDate=2025-05-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "date-range"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01",
+                  "description": "Fecha inicio (ISO DATE)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-31",
+                  "description": "Fecha fin (ISO DATE)"
+                }
+              ]
+            },
+            "description": "Obtiene los fichajes en un rango de fechas. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Today's Timesheets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "today"]
+            },
+            "description": "Obtiene todos los fichajes del día de hoy. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get This Week's Timesheets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/this-week",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "this-week"]
+            },
+            "description": "Obtiene todos los fichajes de la semana actual. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get This Month's Timesheets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/this-month",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "this-month"]
+            },
+            "description": "Obtiene todos los fichajes del mes actual. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Anomaly Management",
+      "description": "Gestión de fichajes con anomalías (tardanzas, horas excesivas, check-out pendiente).",
+      "item": [
+        {
+          "name": "Get Timesheets with Anomalies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/anomalies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "anomalies"]
+            },
+            "description": "Retorna fichajes con tardanzas, horas excesivas, salidas anticipadas, etc. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Overdue Checkouts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/overdue-checkouts?hoursThreshold=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "overdue-checkouts"],
+              "query": [
+                {
+                  "key": "hoursThreshold",
+                  "value": "12",
+                  "description": "Umbral en horas (por defecto 12)"
+                }
+              ]
+            },
+            "description": "Timesheets abiertos que exceden el umbral de horas sin check-out. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Excessive Work Hours",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/excessive-hours?maxHours=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "excessive-hours"],
+              "query": [
+                {
+                  "key": "maxHours",
+                  "value": "12",
+                  "description": "Máximo de horas permitidas (por defecto 12)"
+                }
+              ]
+            },
+            "description": "Fichajes que exceden el máximo de horas permitidas. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Late Check-Ins",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/late-check-ins?toleranceMinutes=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "late-check-ins"],
+              "query": [
+                {
+                  "key": "toleranceMinutes",
+                  "value": "30",
+                  "description": "Minutos de tolerancia (por defecto 30)"
+                }
+              ]
+            },
+            "description": "Fichajes donde el empleado llegó tarde (superando el margen de tolerancia). Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Correct Anomaly",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/{{timesheetId}}/correct-anomaly?notes=Tardanza%20justificada%20por%20incidencia%20en%20transporte%20público",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "{{timesheetId}}", "correct-anomaly"],
+              "query": [
+                {
+                  "key": "notes",
+                  "value": "Tardanza justificada por incidencia en transporte público",
+                  "description": "Notas de corrección (obligatorio)"
+                }
+              ]
+            },
+            "description": "Cambia el estado de ANOMALY a CORRECTED y registra las notas de corrección. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Advanced Search",
+      "description": "Búsqueda avanzada con múltiples filtros.",
+      "item": [
+        {
+          "name": "Search Timesheets with Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/search?userId={{userId}}&status=CLOSED&startDate=2025-05-01&endDate=2025-05-31&page=0&size=20&sort=checkInAt,desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "search"],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{userId}}",
+                  "description": "Opcional. ID del usuario"
+                },
+                {
+                  "key": "workshiftId",
+                  "value": "1",
+                  "description": "Opcional. ID del workshift",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "CLOSED",
+                  "description": "Opcional. Estado del timesheet"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01",
+                  "description": "Opcional. Fecha inicio (ISO DATE)"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-31",
+                  "description": "Opcional. Fecha fin (ISO DATE)"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "checkInAt,desc"
+                }
+              ]
+            },
+            "description": "Búsqueda avanzada combinando múltiples criterios: usuario, workshift, estado, rango de fechas. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Statistics & Reports",
+      "description": "Estadísticas globales, reportes de asistencia y métricas de puntualidad.",
+      "item": [
+        {
+          "name": "Get Global Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "statistics"]
+            },
+            "description": "Estadísticas globales de fichajes: asistencia, puntualidad, horas trabajadas, etc. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Average Worked Hours",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/average-hours?startDate=2025-05-01&endDate=2025-05-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "average-hours"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-31"
+                }
+              ]
+            },
+            "description": "Calcula el promedio de horas trabajadas en un período. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Attendance Stats by Day",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/stats/by-day?startDate=2025-05-01&endDate=2025-05-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "stats", "by-day"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-31"
+                }
+              ]
+            },
+            "description": "Número de fichajes por día en el período especificado. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Attendance Stats by User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/stats/by-user?startDate=2025-05-01&endDate=2025-05-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "stats", "by-user"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-31"
+                }
+              ]
+            },
+            "description": "Número de fichajes y horas trabajadas por usuario. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Attendance Stats by Shift Type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/stats/by-shift-type?startDate=2025-05-01&endDate=2025-05-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "stats", "by-shift-type"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-31"
+                }
+              ]
+            },
+            "description": "Número de fichajes por tipo de turno (MORNING, AFTERNOON, NIGHT). Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Most Punctual Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/stats/most-punctual?startDate=2025-05-01&endDate=2025-05-31&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "stats", "most-punctual"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-31"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Número de usuarios a retornar (por defecto 10)"
+                }
+              ]
+            },
+            "description": "Top usuarios con menor promedio de tardanza. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Users with Most Hours",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/stats/most-hours?startDate=2025-05-01&endDate=2025-05-31&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "stats", "most-hours"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-05-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-05-31"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Número de usuarios a retornar (por defecto 10)"
+                }
+              ]
+            },
+            "description": "Top usuarios con más horas trabajadas en el período. Requiere rol ADMIN o SUPERVISOR."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Operations",
+      "description": "Operaciones administrativas de mantenimiento. Pueden convertirse en CRON jobs.",
+      "item": [
+        {
+          "name": "Auto-Close Old Open Timesheets",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/admin/auto-close?daysThreshold=2",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "admin", "auto-close"],
+              "query": [
+                {
+                  "key": "daysThreshold",
+                  "value": "2",
+                  "description": "Días de umbral (por defecto 2)"
+                }
+              ]
+            },
+            "description": "Cierra automáticamente fichajes abiertos que exceden el umbral de días. Los marca como ANOMALY. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Detect Anomalies in Recent Timesheets",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/admin/detect-anomalies?daysBack=7",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "admin", "detect-anomalies"],
+              "query": [
+                {
+                  "key": "daysBack",
+                  "value": "7",
+                  "description": "Días hacia atrás a analizar (por defecto 7)"
+                }
+              ]
+            },
+            "description": "Analiza fichajes recientes y marca aquellos con tardanzas, horas excesivas, etc. Solo ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Old Timesheets",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/timesheets/admin/archive?monthsThreshold=6",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "timesheets", "admin", "archive"],
+              "query": [
+                {
+                  "key": "monthsThreshold",
+                  "value": "6",
+                  "description": "Meses de umbral (por defecto 6)"
+                }
+              ]
+            },
+            "description": "Archiva fichajes con más del umbral de meses especificado. Solo ADMIN."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "timesheetId",
+      "value": "1"
+    },
+    {
+      "key": "userId",
+      "value": "1"
+    },
+    {
+      "key": "workshiftId",
+      "value": "1"
+    }
+  ]
+}
