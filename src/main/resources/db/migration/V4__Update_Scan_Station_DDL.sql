@@ -1,3 +1,0 @@
-ALTER TABLE scan_stations
-    MODIFY COLUMN status ENUM ('ACTIVE', 'MAINTENANCE', 'OFFLINE', 'INACTIVE')
-        DEFAULT 'ACTIVE';
