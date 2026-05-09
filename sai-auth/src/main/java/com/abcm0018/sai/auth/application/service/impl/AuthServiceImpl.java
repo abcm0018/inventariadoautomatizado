@@ -6,14 +6,15 @@ import com.abcm0018.sai.auth.application.JWTService;
 import com.abcm0018.sai.auth.application.TokenBlackList;
 import com.abcm0018.sai.auth.application.dtos.AuthResponseDTO;
 import com.abcm0018.sai.auth.application.dtos.LoginRequest;
+import com.abcm0018.sai.auth.exceptions.AuthServiceException;
 import com.abcm0018.sai.users.domain.entity.User;
 import com.abcm0018.sai.users.domain.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -41,7 +42,7 @@ public class AuthServiceImpl implements AuthService {
         try{
             authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmployeeNumber(), request.getPassword()));
         }  catch (AuthenticationException e) {
-            throw new AuthenticationServiceException("Error al autenticar el usuario");
+            throw new AuthServiceException("AUTH_FAILED", "Credenciales incorrectas", HttpStatus.UNAUTHORIZED);
         }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);

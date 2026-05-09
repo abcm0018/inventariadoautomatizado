@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Order(9)
-@ControllerAdvice(basePackages = "com.abcm0018.inventarioautomatizado.productos")
+@ControllerAdvice(basePackages = "com.abcm0018.sai.productos")
 public class ProductPackLevelExceptionControllerAdvice {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<StandardResponse<Object>> handleException(Exception ex){

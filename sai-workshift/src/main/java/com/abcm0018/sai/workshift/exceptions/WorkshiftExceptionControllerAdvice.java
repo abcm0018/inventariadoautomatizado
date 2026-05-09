@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @Slf4j
 @Order(5)
-@ControllerAdvice(basePackages = "com.abcm0018.inventarioautomatizado.workshift")
+@ControllerAdvice(basePackages = "com.abcm0018.sai.workshift")
 public class WorkshiftExceptionControllerAdvice {
 
     @ExceptionHandler(Exception.class)

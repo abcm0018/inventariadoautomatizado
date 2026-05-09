@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @Slf4j
 @Order(1)
-@ControllerAdvice(basePackages = "com.abcm0018.inventarioautomatizado.auth")
+@ControllerAdvice(basePackages = "com.abcm0018.sai.auth")
 public class AuthExceptionControllerAdvice {
 
     @ExceptionHandler(Exception.class)

@@ -15,30 +15,30 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- 1. Añadir nueva columna como nullable para poder poblarla antes de aplicar NOT NULL
-ALTER TABLE PALETS ADD COLUMN PACKAGING_DATETIME DATETIME NULL;
+ALTER TABLE palets ADD COLUMN PACKAGING_DATETIME DATETIME NULL;
 
 -- 2. Migrar datos existentes: combinar PACKAGIN_DATE y PRODUCTION_TIME (HH:mm)
-UPDATE PALETS
+UPDATE palets
 SET PACKAGING_DATETIME = TIMESTAMP(PACKAGIN_DATE, STR_TO_DATE(PRODUCTION_TIME, '%H:%i'))
 WHERE PACKAGIN_DATE IS NOT NULL AND PRODUCTION_TIME IS NOT NULL;
 
 -- 3. Filas sin PRODUCTION_TIME: usar medianoche del PACKAGIN_DATE
-UPDATE PALETS
+UPDATE palets
 SET PACKAGING_DATETIME = TIMESTAMP(PACKAGIN_DATE, '00:00:00')
 WHERE PACKAGIN_DATE IS NOT NULL AND PRODUCTION_TIME IS NULL AND PACKAGING_DATETIME IS NULL;
 
 -- 4. Aplicar NOT NULL
-ALTER TABLE PALETS MODIFY COLUMN PACKAGING_DATETIME DATETIME NOT NULL;
+ALTER TABLE palets MODIFY COLUMN PACKAGING_DATETIME DATETIME NOT NULL;
 
 -- 5. Eliminar índice antiguo antes de borrar la columna
-DROP INDEX idx_palet_packaging_date ON PALETS;
+DROP INDEX idx_palet_packaging_date ON palets;
 
 -- 6. Eliminar columnas antiguas
-ALTER TABLE PALETS DROP COLUMN PACKAGIN_DATE;
-ALTER TABLE PALETS DROP COLUMN PRODUCTION_TIME;
+ALTER TABLE palets DROP COLUMN PACKAGIN_DATE;
+ALTER TABLE palets DROP COLUMN PRODUCTION_TIME;
 
 -- 7. Crear nuevo índice para PACKAGING_DATETIME
-CREATE INDEX idx_palet_packaging_datetime ON PALETS (PACKAGING_DATETIME);
+CREATE INDEX idx_palet_packaging_datetime ON palets (PACKAGING_DATETIME);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- CAMBIO 2: Añadir referencia directa al operario en pallet_scans

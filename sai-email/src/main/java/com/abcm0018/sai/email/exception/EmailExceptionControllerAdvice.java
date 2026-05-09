@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Order(8)
-@ControllerAdvice(basePackages = "logging.level.com.abcm0018.inventarioautomatizado.email")
+@ControllerAdvice(basePackages = "com.abcm0018.sai.email")
 public class EmailExceptionControllerAdvice {
 
     @ExceptionHandler(Exception.class)

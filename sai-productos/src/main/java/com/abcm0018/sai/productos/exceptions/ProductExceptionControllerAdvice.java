@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @Slf4j
 @Order(6)
-@ControllerAdvice(basePackages = "com.abcm0018.inventarioautomatizado.productos")
+@ControllerAdvice(basePackages = "com.abcm0018.sai.productos")
 public class ProductExceptionControllerAdvice {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<StandardResponse<Object>> handleException(Exception ex){

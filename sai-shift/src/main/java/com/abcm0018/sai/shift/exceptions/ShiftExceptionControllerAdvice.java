@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @Slf4j
 @Order(3)
-@ControllerAdvice(basePackages = "com.abcm0018.inventarioautomatizado.shift")
+@ControllerAdvice(basePackages = "com.abcm0018.sai.shift")
 public class ShiftExceptionControllerAdvice {
 
     @ExceptionHandler(Exception.class)

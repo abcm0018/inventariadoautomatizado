@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @Slf4j
 @Order(4)
-@ControllerAdvice(basePackages = "com.abcm0018.inventarioautomatizado.timesheet")
+@ControllerAdvice(basePackages = "com.abcm0018.sai.timesheet")
 public class TimesheetExceptionControllerAdvice {
 
     @ExceptionHandler(Exception.class)
