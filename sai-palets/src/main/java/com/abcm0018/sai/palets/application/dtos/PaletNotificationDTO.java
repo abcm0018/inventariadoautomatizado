@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 import com.abcm0018.sai.productos.domain.enums.PackingLevel;
 import com.abcm0018.sai.shift.domain.enums.ShiftType;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -43,7 +44,9 @@ public class PaletNotificationDTO {
 	private String dimensionsMm;
 
 	// Trazabilidad
+	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime scannedAt;
+	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime packagingDateTime;
 	private LocalDate productUseByDate;
 	private boolean isExpired;

@@ -1,13 +1,19 @@
 package com.abcm0018.sai.auth.config;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,9 +29,29 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
 	private final ChannelInterceptor jwtStompInterceptor;
 
+	// El ObjectMapper auto-configurado por Spring Boot ya tiene JavaTimeModule,
+	// write-dates-as-timestamps=false y el resto de customizers aplicados.
+	// Al inyectarlo aquí evitamos que el conversor STOMP use uno vacío por defecto.
+	@Autowired
+	private ObjectMapper objectMapper;
+
 	@Autowired
 	public WebSocketConfig(ChannelInterceptor jwtStompInterceptor) {
 		this.jwtStompInterceptor = jwtStompInterceptor;
+	}
+
+	/**
+	 * Comparte el ObjectMapper HTTP con el conversor de mensajes STOMP para que
+	 * LocalDateTime se serialice como ISO string ("2025-06-07T14:30:00") y no
+	 * como array numérico ([2025,6,7,14,30,0]), que rompía el renderizado
+	 * del ActivityFeed en el Dashboard cuando llegaba una notificación WS.
+	 */
+	@Override
+	public boolean configureMessageConverters(List<MessageConverter> messageConverters) {
+		MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+		converter.setObjectMapper(objectMapper);
+		messageConverters.add(converter);
+		return false;
 	}
 
 	@Override

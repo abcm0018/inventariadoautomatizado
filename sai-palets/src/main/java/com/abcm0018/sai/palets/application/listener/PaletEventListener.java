@@ -6,6 +6,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.user.SimpSubscription;
 import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.abcm0018.sai.palets.application.dtos.PaletNotificationDTO;
@@ -45,10 +47,12 @@ public class PaletEventListener {
 	// Debe coincidir con el prefijo del bróker en WebSocketConfig
 	private static final String WS_DESTINATION_TOPIC = "/topic/palets";
 
+	// REQUIRES_NEW garantiza que este método siempre abre una transacción propia,
+	// independientemente del estado del hilo (la transacción original ya committeó).
+	// Sin esto, la lambda de ifPresentOrElse opera con la entidad detached y cualquier
+	// acceso a una relación lazy lanza LazyInitializationException.
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	@TransactionalEventListener(PaletCreatedEvent.class)
-	// Necesitamos una transacción para poder cargar las relaciones
-	// "lazy" (como palet.user y palet.packeLevel.product)
-	// Sin que ocurra un 'LazyInitializationException'
 	public void handlePaletCreatedEvent(PaletCreatedEvent event) {
 
 		Set<SimpSubscription> subscriptionsForTopic = simpUserRegistry
