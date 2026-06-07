@@ -24,13 +24,13 @@ import com.abcm0018.sai.users.domain.entity.User;
 import com.abcm0018.sai.workshift.domain.entity.Workshift;
 
 /**
- * Mapper para convertir entre Palet Entity y DTOs
+ * Mapper MapStruct entre la entidad {@link Palet} y sus DTOs de respuesta.
  * <p>
- * ARQUITECTURA:
- * - Mapea directamente desde ProductPackLevel (no desde Product)
- * - Extrae información del Producto a través de ProductPackLevel
- * - MapStruct genera la implementación automáticamente en tiempo de compilación
- * - Usa @AfterMapping para enriquecimiento post-mapeo (consistente con ProductPackLevelMapper)
+ * El acceso al producto siempre se resuelve a través de {@code ProductPackLevel},
+ * ya que un {@code Palet} está vinculado a un nivel de embalaje concreto, no al
+ * producto directamente. La información del operador y el turno vive en
+ * {@code PalletScan}: se accede mediante {@code latestScan}, que es el primer
+ * elemento de la colección {@code scans} ordenada por {@code scannedAt DESC}.
  */
 @Mapper(
 		componentModel = "spring",
@@ -39,25 +39,17 @@ import com.abcm0018.sai.workshift.domain.entity.Workshift;
 )
 public interface PaletMapper {
 
-	/**
-	 * Días para considerar un palet como próximo a caducar (WARNING)
-	 * Valor sincronizado con ExpiryHelper.EXPIRY_WARNING_DAYS
-	 */
+	/** Umbral de aviso de caducidad, sincronizado con {@code ExpiryHelper.EXPIRY_WARNING_DAYS}. */
 	int EXPIRY_WARNING_DAYS = 7;
 
-	/**
-	 * Días para considerar un palet en estado crítico de caducidad
-	 * Valor sincronizado con ExpiryHelper.CRITICAL_EXPIRY_DAYS
-	 */
+	/** Umbral crítico de caducidad, sincronizado con {@code ExpiryHelper.CRITICAL_EXPIRY_DAYS}. */
 	int CRITICAL_EXPIRY_DAYS = 3;
 
 	/**
-	 * Convierte CreatePaletRequestDTO a Palet entity
+	 * Convierte un {@link CreatePaletRequestDTO} en una entidad {@link Palet} sin persistir.
 	 * <p>
-	 * NOTA: packLevelId reemplaza productId (relación especifica a nivel de embalaje)
-	 * Las relaciones (productPackLevel, user, workshift) se asignan en el Service
-	 * @param requestDTO datos de creación del cliente
-	 * @return entidad Palet sin persistir (relaciones null)
+	 * Las relaciones {@code productPackLevel} y {@code scans} se asignan en el servicio
+	 * tras la validación, por lo que se ignoran aquí.
 	 */
 	@Mapping(target = "id", ignore = true)
 	@Mapping(target = "productPackLevel", ignore = true)
@@ -67,13 +59,9 @@ public interface PaletMapper {
 	Palet toPalet(CreatePaletRequestDTO requestDTO);
 
 	/**
-	 * Actualiza una entidad existente con datos del UpdateRequestDTO
+	 * Actualiza en sitio una entidad {@link Palet} con los campos del {@link UpdatePaletRequestDTO}.
 	 * <p>
-	 * RESTRICCIONES: productPackLevel NO es modificable (relación inmutable)
-	 * Solo se pueden actualizar campos sin dependencias críticas
-	 *
-	 * @param requestDTO datos de actualización (parcial)
-	 * @param entity entidad a actualizar (será modificada)
+	 * {@code productPackLevel} es inmutable tras la creación del palet y se ignora aquí.
 	 */
 	@Mapping(target = "id", ignore = true)
 	@Mapping(target = "productPackLevel", ignore = true)
@@ -85,19 +73,17 @@ public interface PaletMapper {
 	// ========== ENTITY → RESPONSE (Mappeos básicos) ==========
 
 	/**
-	 * Convierte Palet a PaletResponseDTO (respuesta básica)
+	 * Convierte {@link Palet} a {@link PaletResponseDTO} con información esencial y caducidad.
 	 * <p>
-	 * Accede a información del Producto a través de ProductPackLevel
-	 * Incluye información del operador y turno
-	 *
-	 * @param palet entidad persistida
-	 * @return DTO con información esencial + caducidad
+	 * El operador y el turno se resuelven desde {@code latestScan}. Los campos de caducidad
+	 * se calculan en {@link #enrichResponse} mediante {@code @AfterMapping}.
 	 */
 	@Mapping(target = "packLevelId", source = "productPackLevel.id")
 	@Mapping(target = "gtin", source = "productPackLevel.gtin")
 	@Mapping(target = "productId", source = "productPackLevel.product.id")
 	@Mapping(target = "productName", source = "productPackLevel.product.name")
 	@Mapping(target = "productBrand", source = "productPackLevel.product.brand")
+	@Mapping(target = "scannedAt",        source = "latestScan.scannedAt")
 	@Mapping(target = "userId",           source = "latestScan.workshift.user.id")
 	@Mapping(target = "employeeNumber",   source = "latestScan.workshift.user.employeeNumber")
 	@Mapping(target = "userFullName", expression = "java(getUserFullName(palet))")
@@ -108,67 +94,52 @@ public interface PaletMapper {
 	PaletResponseDTO toResponse(Palet palet);
 
 	/**
-	 * Enriquece PaletResponseDTO con cálculos de caducidad
-	 * <p>
-	 * Se ejecuta automáticamente después de toResponse()
-	 * Centraliza lógica de caducidad para evitar duplicación
+	 * Calcula y aplica los campos de caducidad al builder ANTES de que se llame a build().
+	 * Se usa el tipo builder como @MappingTarget para que MapStruct lo invoque correctamente
+	 * cuando el DTO se construye con el patrón Lombok @Builder.
 	 */
 	@AfterMapping
-	default void enrichResponse(Palet entity, @MappingTarget PaletResponseDTO dto) {
-		if (entity != null && dto != null) {
-			ExpiryInfo expiryInfo = calculateExpiryInfo(entity.getProductUseByDate());
-			applyExpiryInfoToResponse(dto, expiryInfo);
-		}
+	default void enrichResponse(Palet entity, @MappingTarget PaletResponseDTO.PaletResponseDTOBuilder dto) {
+		if (entity == null || dto == null) return;
+		ExpiryInfo info = calculateExpiryInfo(entity.getProductUseByDate());
+		dto.daysUntilExpiry(info.daysUntilExpiry())
+		   .isExpiringSoon(info.isExpiringSoon())
+		   .isExpired(info.isExpired());
 	}
 
-	/**
-	 * Convierte lista de Palets a lista de PaletResponseDTO
-	 *
-	 * @param palets lista de entidades
-	 * @return lista de DTOs de respuesta
-	 */
 	List<PaletResponseDTO> toResponseList(List<Palet> palets);
 
 	/**
-	 * Convierte Palet a PaletDetailResponseDTO (respuesta completa con relaciones anidadas)
+	 * Convierte {@link Palet} a {@link PaletDetailResponseDTO} con todas las relaciones anidadas:
+	 * nivel de embalaje, producto, operador y turno.
 	 * <p>
-	 * Incluye 4 niveles de relaciones:
-	 * - PackLevelInfo: Detalles del nivel de embalaje (9 campos)
-	 * - ProductInfo: Detalles del producto base (6 campos)
-	 * - UserInfo: Información del operador (5 campos)
-	 * - WorkshiftInfo: Información del turno (4 campos)
-	 *
-	 * @param palet entidad persistida
-	 * @return DTO con todas las relaciones enriquecidas
+	 * {@code packagingDateTime} se descompone en {@code packagingDate} (solo fecha) y
+	 * {@code productionTime} (solo hora) para ajustarse al contrato que consume
+	 * {@code PaletDetailsModal}.
 	 */
-	@Mapping(target = "packLevel", expression = "java(toPackLevelInfo(palet.getProductPackLevel()))")
-	@Mapping(target = "product", expression = "java(toProductInfo(palet.getProductPackLevel().getProduct()))")
-	@Mapping(target = "scannedBy", expression = "java(toUserInfo(palet))")
-	@Mapping(target = "workshift", expression = "java(toWorkshiftInfo(palet))")
+	@Mapping(target = "packagingDate",   expression = "java(palet.getPackagingDateTime() != null ? palet.getPackagingDateTime().toLocalDate() : null)")
+	@Mapping(target = "productionTime",  expression = "java(palet.getPackagingDateTime() != null ? palet.getPackagingDateTime().toLocalTime() : null)")
+	@Mapping(target = "packLevel",   expression = "java(toPackLevelInfo(palet.getProductPackLevel()))")
+	@Mapping(target = "product",     expression = "java(toProductInfo(palet.getProductPackLevel().getProduct()))")
+	@Mapping(target = "scannedBy",   expression = "java(toUserInfo(palet))")
+	@Mapping(target = "workshift",   expression = "java(toWorkshiftInfo(palet))")
 	PaletDetailResponseDTO toResponseDetail(Palet palet);
 
-	/**
-	 * Enriquece PaletDetailResponseDTO con información de caducidad completa
-	 * <p>
-	 * Se ejecuta automáticamente después de toResponseDetail()
-	 * Incluye estado crítico de caducidad
-	 */
+	/** Calcula y aplica los campos de caducidad (incluido estado crítico) al builder de {@link PaletDetailResponseDTO}. */
 	@AfterMapping
-	default void enrichDetailResponse(Palet entity, @MappingTarget PaletDetailResponseDTO dto) {
-		if (entity != null && dto != null) {
-			ExpiryInfo expiryInfo = calculateExpiryInfo(entity.getProductUseByDate());
-			applyExpiryInfoToDetailResponse(dto, expiryInfo);
-		}
+	default void enrichDetailResponse(Palet entity, @MappingTarget PaletDetailResponseDTO.PaletDetailResponseDTOBuilder dto) {
+		if (entity == null || dto == null) return;
+		ExpiryInfo info = calculateExpiryInfo(entity.getProductUseByDate());
+		dto.daysUntilExpiry(info.daysUntilExpiry())
+		   .isExpiringSoon(info.isExpiringSoon())
+		   .isExpired(info.isExpired())
+		   .isCriticalExpiry(info.isCritical())
+		   .expiryStatus(info.status());
 	}
 
 	/**
-	 * Convierte Palet a PaletSummaryResponseDTO (respuesta resumida para listados)
-	 * <p>
-	 * Información mínima optimizada para paginación
-	 * Sin anidamientos complejos (mejor performance)
-	 *
-	 * @param palet entidad persistida
-	 * @return DTO con información esencial para listados
+	 * Convierte {@link Palet} a {@link PaletSummaryResponseDTO}, versión plana optimizada
+	 * para resultados paginados donde no se necesitan relaciones anidadas completas.
 	 */
 	@Mapping(target = "employeeNumber", source = "latestScan.workshift.user.employeeNumber")
 	@Mapping(target = "shift", source = "latestScan.workshift.shift.shiftType.displayName")
@@ -177,70 +148,54 @@ public interface PaletMapper {
 	@Mapping(target = "productBrand", source = "productPackLevel.product.brand")
 	PaletSummaryResponseDTO toResponseSummary(Palet palet);
 
-	/**
-	 * Enriquece PaletSummaryResponseDTO con información de caducidad
-	 * <p>
-	 * Se ejecuta automáticamente después de toResponseSummary()
-	 * Incluye todos los campos de estado de caducidad (crucial para UI)
-	 */
+	/** Calcula y aplica los campos de caducidad al builder de {@link PaletSummaryResponseDTO}. */
 	@AfterMapping
-	default void enrichSummaryResponse(Palet entity, @MappingTarget PaletSummaryResponseDTO dto) {
-		if (entity != null && dto != null) {
-			ExpiryInfo expiryInfo = calculateExpiryInfo(entity.getProductUseByDate());
-			applyExpiryInfoToSummaryResponse(dto, expiryInfo);
-		}
+	default void enrichSummaryResponse(Palet entity, @MappingTarget PaletSummaryResponseDTO.PaletSummaryResponseDTOBuilder dto) {
+		if (entity == null || dto == null) return;
+		ExpiryInfo info = calculateExpiryInfo(entity.getProductUseByDate());
+		dto.daysUntilExpiry(info.daysUntilExpiry())
+		   .isExpiringSoon(info.isExpiringSoon())
+		   .isExpired(info.isExpired())
+		   .expiryStatus(info.status());
 	}
 
-	/**
-	 * Convierte lista de Palets a lista de PaletSummaryResponseDTO
-	 *
-	 * @param palets lista de entidades
-	 * @return lista de DTOs resumidos
-	 */
 	List<PaletSummaryResponseDTO> toSummaryResponseList(List<Palet> palets);
 
 	/**
-	 * Convierte una entidad Palet al DTO específico para notificaciones WebSocket.
+	 * Convierte {@link Palet} a {@link PaletNotificationDTO} para el canal WebSocket
+	 * {@code /topic/palets} y el endpoint REST {@code /api/v1/palets/recent}.
 	 * <p>
-	 * Extrae toda la información enriquecida necesaria para
-	 * la UI del dashboard en tiempo real, coincidiendo con la lógica
-	 * que estaba originalmente en PaletEventListener.
-	 *
-	 * @param palet La entidad Palet completa (con relaciones cargadas)
-	 * @return DTO de notificación para WebSocket
+	 * La entidad debe tener las relaciones {@code productPackLevel}, {@code scans},
+	 * {@code workshift} y {@code user} ya inicializadas para evitar
+	 * {@code LazyInitializationException}. Las dimensiones y el flag de caducidad
+	 * se calculan en {@link #enrichNotificationDTO}.
 	 */
-	@Mapping(target = "gtin", source = "productPackLevel.gtin")
-	@Mapping(target = "productSku", source = "productPackLevel.product.formatCode")
-	@Mapping(target = "productName", source = "productPackLevel.product.name")
-	@Mapping(target = "brand", source = "productPackLevel.product.brand")
-	@Mapping(target = "packLevel", source = "productPackLevel.packingLevel")
-	@Mapping(target = "unitsInLevel", source = "productPackLevel.unitsInLevel")
+	@Mapping(target = "paletId",       source = "id")
+	@Mapping(target = "scannedAt",     source = "latestScan.scannedAt")
+	@Mapping(target = "gtin",          source = "productPackLevel.gtin")
+	@Mapping(target = "productSku",    source = "productPackLevel.product.formatCode")
+	@Mapping(target = "productName",   source = "productPackLevel.product.name")
+	@Mapping(target = "brand",         source = "productPackLevel.product.brand")
+	@Mapping(target = "packLevel",     source = "productPackLevel.packingLevel")
+	@Mapping(target = "unitsInLevel",  source = "productPackLevel.unitsInLevel")
 	@Mapping(target = "grossWeightKg", source = "productPackLevel.netWeight")
 	@Mapping(target = "stackingLimit", source = "productPackLevel.stackingLimit")
-	@Mapping(target = "employeeName", source = "latestScan.workshift.user.fullName")
-	@Mapping(target = "shiftType", source = "latestScan.workshift.shift.shiftType")
-	@Mapping(target = "dimensionsMm", ignore = true)
-	@Mapping(target = "isExpired", ignore = true)
+	@Mapping(target = "employeeName",  source = "latestScan.workshift.user.fullName")
+	@Mapping(target = "shiftType",     source = "latestScan.workshift.shift.shiftType")
+	@Mapping(target = "dimensionsMm",  ignore = true)
+	@Mapping(target = "isExpired",     ignore = true)
 	PaletNotificationDTO toResponsePaletNotification(Palet palet);
 
 	/**
-	 * Value Object para encapsular información de caducidad
-	 * <p>
-	 * Elimina duplicación al pasar múltiples valores entre métodos Facilita testing y mantenimiento
+	 * Agrupa los campos de caducidad calculados para evitar pasar múltiples primitivos
+	 * entre los métodos de enriquecimiento {@code @AfterMapping}.
 	 */
 	record ExpiryInfo(Long daysUntilExpiry, boolean isExpired, boolean isExpiringSoon, boolean isCritical, String status) {
 	}
 
 	/**
-	 * Calcula TODA la información de caducidad en UN ÚNICO LUGAR
-	 * <p>
-	 * VENTAJA DRY: Un solo cálculo, reutilizado en todos los mapeos
-	 * - Elimina duplicación de lógica
-	 * - Fácil de testear
-	 * - Si cambia lógica, se actualiza en UN lugar
-	 *
-	 * @param expiryDate fecha de caducidad
-	 * @return Value Object ExpiryInfo con TODOS los cálculos
+	 * Punto único de cálculo de caducidad, reutilizado en todos los {@code @AfterMapping}.
+	 * Devuelve {@code UNKNOWN} para fechas nulas.
 	 */
 	default ExpiryInfo calculateExpiryInfo(LocalDate expiryDate) {
 		if (expiryDate == null) {
@@ -256,32 +211,18 @@ public interface PaletMapper {
 		return new ExpiryInfo(daysUntilExpiry, isExpiredFlag, isExpiringFlag, isCriticalFlag, statusFlag);
 	}
 
-	/**
-	 * Enriquece el PaletNotificationDTO con campos calculados (dimensiones y caducidad).
-	 * MapStruct ejecutará esto automáticamente después de toResponsePaletNotification.
-	 */
+	/** Calcula el flag de caducidad y las dimensiones en formato {@code WxH} al builder de {@link PaletNotificationDTO}. */
 	@AfterMapping
-	default void enrichNotificationDTO(Palet palet, @MappingTarget PaletNotificationDTO dto) {
-		if (palet == null || dto == null) {
-			return;
-		}
-
-		// 1. Calcular Caducidad (tomado de la lógica de Palet.java)
-		dto.setExpired(palet.isExpired());
-
-		// 2. Calcular Dimensiones (tomado de la lógica de PaletEventListener)
-		ProductPackLevel packLevel = palet.getProductPackLevel(); //
+	default void enrichNotificationDTO(Palet palet, @MappingTarget PaletNotificationDTO.PaletNotificationDTOBuilder dto) {
+		if (palet == null || dto == null) return;
+		dto.isExpired(palet.isExpired());
+		ProductPackLevel packLevel = palet.getProductPackLevel();
 		if (packLevel != null && packLevel.getWidthMM() != null && packLevel.getHeightMM() != null) {
-			String dimensions = String.format("%dx%d", packLevel.getWidthMM().intValue(), packLevel.getHeightMM().intValue());
-			dto.setDimensionsMm(dimensions); //
+			dto.dimensionsMm(String.format("%dx%d", packLevel.getWidthMM().intValue(), packLevel.getHeightMM().intValue()));
 		}
 	}
 
-	/**
-	 * Determina el estado textual de caducidad
-	 * <p>
-	 * PARÁMETROS OPTIMIZADOS: Recibe boolean precalculados
-	 */
+	/** Devuelve el estado textual de caducidad a partir de los flags ya calculados. */
 	default String determineExpiryStatus(Long daysUntilExpiry, boolean isExpired, boolean isCritical, boolean isExpiring) {
 		if (daysUntilExpiry == null) {
 			return "UNKNOWN";
@@ -299,52 +240,8 @@ public interface PaletMapper {
 	}
 
 	/**
-	 * Aplica ExpiryInfo a PaletResponseDTO
-	 * <p>
-	 * Evita duplicación de setters
-	 */
-	default void applyExpiryInfoToResponse(PaletResponseDTO dto, ExpiryInfo info) {
-		if (dto != null && info != null) {
-			dto.setDaysUntilExpiry(info.daysUntilExpiry);
-			dto.setIsExpiringSoon(info.isExpiringSoon);
-			dto.setIsExpired(info.isExpired);
-		}
-	}
-
-	/**
-	 * Aplica ExpiryInfo a PaletDetailResponseDTO
-	 * <p>
-	 * Incluye campo adicional isCriticalExpiry
-	 */
-	default void applyExpiryInfoToDetailResponse(PaletDetailResponseDTO dto, ExpiryInfo info) {
-		if (dto != null && info != null) {
-			dto.setDaysUntilExpiry(info.daysUntilExpiry);
-			dto.setIsExpiringSoon(info.isExpiringSoon);
-			dto.setIsExpired(info.isExpired);
-			dto.setIsCriticalExpiry(info.isCritical);
-			dto.setExpiryStatus(info.status);
-		}
-	}
-
-	/**
-	 * Aplica ExpiryInfo a PaletSummaryResponseDTO
-	 * <p>
-	 * Incluye todos los campos de estado
-	 */
-	default void applyExpiryInfoToSummaryResponse(PaletSummaryResponseDTO dto, ExpiryInfo info) {
-		if (dto != null && info != null) {
-			dto.setDaysUntilExpiry(info.daysUntilExpiry);
-			dto.setIsExpiringSoon(info.isExpiringSoon);
-			dto.setIsExpired(info.isExpired);
-			dto.setExpiryStatus(info.status);
-		}
-	}
-
-	/**
-	 * Extrae el nombre completo del usuario de forma defensiva
-	 *
-	 * @param palet entidad con relación a usuario
-	 * @return nombre completo del usuario o null si no existe
+	 * Extrae el nombre completo del operador de forma defensiva recorriendo la cadena
+	 * {@code palet → latestScan → workshift → user}. Se usa via expression en {@link #toResponse}.
 	 */
 	default String getUserFullName(Palet palet) {
 		if (palet == null || palet.getLatestScan() == null
@@ -355,18 +252,7 @@ public interface PaletMapper {
 		return palet.getLatestScan().getWorkshift().getUser().getFullName();
 	}
 
-	/**
-	 * Crea PackLevelInfo desde ProductPackLevel (9 campos de embalaje)
-	 * <p>
-	 * Información completa del nivel de embalaje:
-	 * - Identificadores (id, gtin)
-	 * - Tipo de embalaje (packingLevel)
-	 * - Medidas (netWeight, heightMM, widthMM)
-	 * - Configuración (unitsInLevel, stackingLimit, boxesPerPalet)
-	 *
-	 * @param packLevel entidad ProductPackLevel
-	 * @return PackLevelInfo enriquecida o null
-	 */
+	/** Construye el objeto anidado {@link PaletDetailResponseDTO.PackLevelInfo} desde un {@link ProductPackLevel}. */
 	default PaletDetailResponseDTO.PackLevelInfo toPackLevelInfo(ProductPackLevel packLevel) {
 		if (packLevel == null) {
 			return null;
@@ -385,17 +271,7 @@ public interface PaletMapper {
 				.build();
 	}
 
-	/**
-	 * Crea ProductInfo desde Product (6 campos de producto)
-	 * <p>
-	 * Información del producto base (no del embalaje):
-	 * - Identificadores (id)
-	 * - Descripción (name, brand, description)
-	 * - Clasificación (formatCode, manufacturedIn, status)
-	 *
-	 * @param product entidad Product
-	 * @return ProductInfo enriquecida o null
-	 */
+	/** Construye el objeto anidado {@link PaletDetailResponseDTO.ProductInfo} desde un {@link Product}. */
 	default PaletDetailResponseDTO.ProductInfo toProductInfo(Product product) {
 		if (product == null) {
 			return null;
@@ -412,17 +288,7 @@ public interface PaletMapper {
 				.build();
 	}
 
-	/**
-	 * Crea UserInfo desde Palet (5 campos de usuario)
-	 * <p>
-	 * Información del operador que escaneó el palet:
-	 * - Identificadores (id, employeeNumber)
-	 * - Datos personales (fullName, email)
-	 * - Posición (jobPosition)
-	 *
-	 * @param palet entidad con relación a usuario
-	 * @return UserInfo enriquecida o null
-	 */
+	/** Construye el objeto anidado {@link PaletDetailResponseDTO.UserInfo} desde la relación {@code latestScan → workshift → user}. */
 	default PaletDetailResponseDTO.UserInfo toUserInfo(Palet palet) {
 		if (palet == null || palet.getLatestScan() == null
 				|| palet.getLatestScan().getWorkshift() == null
@@ -440,17 +306,7 @@ public interface PaletMapper {
 				.build();
 	}
 
-	/**
-	 * Crea WorkshiftInfo desde Palet (4 campos de turno)
-	 * <p>
-	 * Información del turno de producción:
-	 * - Identificadores (id)
-	 * - Fechas (date)
-	 * - Descripción (shiftType, shiftDescription)
-	 *
-	 * @param palet entidad con relación a turno
-	 * @return WorkshiftInfo enriquecida o null
-	 */
+	/** Construye el objeto anidado {@link PaletDetailResponseDTO.WorkshiftInfo} desde la relación {@code latestScan → workshift → shift}. */
 	default PaletDetailResponseDTO.WorkshiftInfo toWorkshiftInfo(Palet palet) {
 		if (palet == null || palet.getLatestScan() == null || palet.getLatestScan().getWorkshift() == null) {
 			return null;

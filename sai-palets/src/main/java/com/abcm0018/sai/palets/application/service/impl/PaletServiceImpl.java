@@ -196,8 +196,9 @@ public class PaletServiceImpl implements PaletService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public Page<PaletNotificationDTO> findRecent7Palets(Pageable pageable) {
-		return paletRepository.findAll(pageable).map(paletMapper::toResponsePaletNotification);
+		return paletRepository.findRecentPaletsWithDetails(pageable).map(paletMapper::toResponsePaletNotification);
 	}
 
 	@Override
@@ -882,11 +883,17 @@ public class PaletServiceImpl implements PaletService {
 		PaletValidationContext context = validationService.validateAndContextualize(message);
 
 		// 2. Crear Palet — workshift, usuario y scannedAt viven en PalletScan, no en Palet
+		// Si packagingDateTime no viene en el mensaje (lectura automática sin etiqueta completa),
+		// usamos scanDate como aproximación para no violar la restricción NOT NULL de la columna.
+		LocalDateTime packagingDateTime = message.getPackagingDateTime() != null
+				? message.getPackagingDateTime()
+				: message.getScanDate();
+
 		Palet paletToSave = Palet.createNewPalet(
 				message.getSscc(),
 				message.getBatchNumber(),
 				context.getPackLevel(),
-				message.getPackagingDateTime(),
+				packagingDateTime,
 				message.getProductUseByDate()
 		);
 		Palet savedPalet = paletRepository.save(paletToSave);

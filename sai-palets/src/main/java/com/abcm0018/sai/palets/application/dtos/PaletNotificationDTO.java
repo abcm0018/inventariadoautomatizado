@@ -13,9 +13,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO (Data Transfer Object) para notificaciones WebSocket.
- * * Contiene información enriquecida para un análisis detallado
- * por parte del equipo de logística (Paso 6).
+ * Payload de notificación enviado al frontend vía WebSocket (STOMP /topic/palets)
+ * y devuelto por el endpoint REST /api/v1/palets/recent.
+ * <p>
+ * Contiene los datos mínimos necesarios para renderizar la fila del ActivityFeed
+ * del Dashboard en tiempo real: identificación del palet, producto, operador y
+ * timestamp de escaneo para el cálculo del turno.
  */
 @Data
 @NoArgsConstructor
@@ -23,28 +26,29 @@ import lombok.NoArgsConstructor;
 @Builder
 public class PaletNotificationDTO {
 
-	// --- (Identificación) ---
-	private String sscc;              // (De Palet) El ID único del palet
-	private String batchNumber;       // (De Palet) Lote de producción
-	private String gtin;              // (De ProductPackLevel) El EAN/GTIN del embalaje
-	private String productSku;        // (De Product) El SKU interno
-	private String productName;       // (De Product) Nombre del producto
-	private String brand;             // (De Product) Marca del producto
+	// Identificación
+	private Long paletId;
+	private String sscc;
+	private String batchNumber;
+	private String gtin;
+	private String productSku;
+	private String productName;
+	private String brand;
 
-	// --- (Logística) ---
-	private PackingLevel packLevel;   // (De ProductPackLevel) Ej: "PALET", "CAJA"
-	private Integer unitsInLevel;     // (De ProductPackLevel) Unidades totales en este palet
-	private BigDecimal grossWeightKg; // (De ProductPackLevel) Peso bruto
-	private Integer stackingLimit;    // (De ProductPackLevel) Límite de apilado (muy útil)
-	private String dimensionsMm;      // (De ProductPackLevel) Ej: "1200x800x1000"
+	// Logística
+	private PackingLevel packLevel;
+	private Integer unitsInLevel;
+	private BigDecimal grossWeightKg;
+	private Integer stackingLimit;
+	private String dimensionsMm;
 
-	// --- (Trazabilidad) ---
-	private LocalDateTime scannedAt;         // (De Palet) El timestamp exacto del escaneo
-	private LocalDateTime packagingDateTime; // (De Palet) Fecha y hora de envasado
-	private LocalDate productUseByDate;      // (De Palet) Fecha de CADUCIDAD
-	private boolean isExpired;        // (De Palet) Flag de conveniencia
+	// Trazabilidad
+	private LocalDateTime scannedAt;
+	private LocalDateTime packagingDateTime;
+	private LocalDate productUseByDate;
+	private boolean isExpired;
 
-	// --- (Operativa) ---
-	private String employeeName;      // (De User) Nombre del operario
-	private ShiftType shiftType;      // (De Workshift -> Shift) Turno (Mañana, Tarde, Noche)
+	// Operativa
+	private String employeeName;
+	private ShiftType shiftType;
 }

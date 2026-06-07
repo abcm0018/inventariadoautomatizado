@@ -28,6 +28,12 @@ public interface WorkshiftRepository extends JpaRepository<Workshift, Long>, Jpa
 	List<Workshift> findByDate(LocalDate date);
 
 	/**
+	 * Cuenta los turnos existentes en un rango de fechas (inclusive).
+	 * Usado como check de fail-fast antes de lanzar la planificación completa.
+	 */
+	long countByDateBetween(LocalDate startDate, LocalDate endDate);
+
+	/**
 	 * Optimizado: Encuentra turnos en un rango de fechas, TRAYENDO ADEMÁS (FETCH)
 	 * la entidad User asociada en la misma consulta para evitar N+1.
 	 * * Reemplaza a: findByDateBetweenOrderByDateAsc
@@ -78,4 +84,7 @@ public interface WorkshiftRepository extends JpaRepository<Workshift, Long>, Jpa
 	List<Workshift> findLatestShiftTypesForUsers(List<User> users);
 
 	boolean existsByUserAndDateAndIdNot(User user, LocalDate date, Long currentWorkhiftId);
+
+	@Query("SELECT w FROM Workshift w JOIN FETCH w.shift WHERE w.user = :user AND w.date = :date ORDER BY w.shift.startTime ASC")
+	List<Workshift> findByUserAndDateWithShift(@Param("user") User user, @Param("date") LocalDate date);
 }

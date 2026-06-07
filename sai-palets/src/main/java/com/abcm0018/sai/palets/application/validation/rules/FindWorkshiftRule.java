@@ -1,6 +1,6 @@
 package com.abcm0018.sai.palets.application.validation.rules;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.stereotype.Component;
@@ -30,18 +30,18 @@ public class FindWorkshiftRule implements PaletValidationRule {
 	public void validate(PaletValidationContext context) throws PaletValidationException {
 
 		final String employeeNumber = context.getMessage().getEmployeeNumber();
-		final LocalDate scanDate = context.getMessage().getScanDate().toLocalDate();
+		final LocalDateTime scanDateTime = context.getMessage().getScanDate();
 
-		log.debug("Regla [Workshift]: Buscando turno para Empleado '{}' en fecha '{}'", employeeNumber, scanDate);
+		log.debug("Regla [Workshift]: Buscando turno para Empleado '{}' en fecha/hora '{}'", employeeNumber, scanDateTime);
 
 		// Usamos la caché
-		Optional<Workshift> foundWorkshift = workshiftService.findCachedWorkshiftByEmployeeAndDate(employeeNumber, scanDate);
+		Optional<Workshift> foundWorkshift = workshiftService.findCachedWorkshiftByEmployeeAndDate(employeeNumber, scanDateTime);
 
 		// Si no se encuentra (ni en la caché ni en BBDD)...
 		if (foundWorkshift.isEmpty()) {
-			log.warn("Regla [Workshift] Fallida: No se encontró turno para Empleado '{}' en fecha '{}'", employeeNumber, scanDate);
+			log.warn("Regla [Workshift] Fallida: No se encontró turno para Empleado '{}' en fecha/hora '{}'", employeeNumber, scanDateTime);
 
-			throw new PaletValidationException("Turno de trabajo no encontrado para el empleado " + employeeNumber + " en la fecha " + scanDate);
+			throw new PaletValidationException("Turno de trabajo no encontrado para el empleado " + employeeNumber + " en la fecha " + scanDateTime.toLocalDate());
 		}
 
 		// Si encontrado, guardamos el turno en el contexto

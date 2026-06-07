@@ -53,12 +53,8 @@ public class WorkshiftController {
 			return ResponseBuilder.with(HttpStatus.OK, true, "La planificación ya está actualizada. No se crearon nuevos turnos");
 		}
 
-		return  ResponseBuilder.withCreatedElements(
-				HttpStatus.CREATED,
-				true,
-				numWorkshifts,
-				String.format("Planificación completada. Se generaron %d turnos nuevos.", numWorkshifts)
-		);
+		return  ResponseBuilder.withCreatedElements(HttpStatus.CREATED, true, numWorkshifts,
+				String.format("Planificación completada. Se generaron %d turnos nuevos.", numWorkshifts));
 	}
 
 	@CrossOrigin
@@ -170,28 +166,30 @@ public class WorkshiftController {
 	}
 
 	/**
-	 * Generar planificación semanal manualmente (SOLO PARA TESTING)
-	 * En producción se ejecuta automáticamente mediante CRON cada viernes 18:00
+	 * Genera turnos para el rango de fechas seleccionado desde la web.
+	 * Acepta el mismo payload que {@code POST /api/v1/workshifts} para que
+	 * {@code GenerateScheduleModal} pueda enviar {@code fromDate} y {@code toDate}.
 	 */
 	@CrossOrigin
 	@PostMapping("/generate-schedule")
-	@PreAuthorize("hasRole('ADMIN')")
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
 	@Operation(
-			summary = "Generar planificación de la próxima semana (MANUAL - SOLO TESTING)",
-			description = "ADVERTENCIA: En producción esto se ejecuta automáticamente con CRON. Este endpoint es SOLO para testing o emergencias."
+			summary = "Generar planificación para un rango de fechas",
+			description = "Genera turnos para todos los operarios activos en el rango indicado " +
+					"respetando la rotación estándar. Evicta la caché y popula Redis inmediatamente."
 	)
-	public StandardResponse<Void> generateNextWeekSchedule() {
+	public StandardResponse<Void> generateScheduleForRange(@Valid @RequestBody CreateWorkshiftRequestDTO requestDTO) {
 
-		log.warn("╔═══════════════════════════════════════════════════════════════════╗");
-		log.warn("║  GENERACIÓN MANUAL DE PLANIFICACIÓN SEMANAL (NO RECOMENDADO)      ║");
-		log.warn("║  Este endpoint es solo para testing/emergencias                   ║");
-		log.warn("║  En producción usa el CRON automático                             ║");
-		log.warn("╚═══════════════════════════════════════════════════════════════════╝");
+		log.info("Generando planificación manual: {} → {}", requestDTO.getFromDate(), requestDTO.getToDate());
 
-		workshiftService.generateNextWeekSchedule();
+		Integer count = workshiftService.generateWorkshiftSchedule(requestDTO);
 
-		return ResponseBuilder.withCreatedElements(HttpStatus.CREATED, true, 0,"Planificación semanal generada exitosamente");
-
+		if (count == 0) {
+			return ResponseBuilder.with(HttpStatus.OK, true,
+					"La planificación ya está actualizada. No se crearon nuevos turnos.");
+		}
+		return ResponseBuilder.withCreatedElements(HttpStatus.CREATED, true, count,
+				String.format("Planificación completada. Se generaron %d turnos nuevos.", count));
 	}
 
 	/**

@@ -4,6 +4,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,8 +15,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO de respuesta detallada para Palet
- * Incluye toda la información del palet, nivel de embalaje, producto y operador
+ * DTO de respuesta detallada para {@code GET /api/v1/palets/{id}}, consumido por
+ * {@code PaletDetailsModal} y {@code ProductDetailsModal}.
+ * <p>
+ * Las fechas y horas siguen el formato ISO 8601 con separador {@code T} para
+ * compatibilidad con {@code date-fns parseISO}. El campo {@code packaging_datetime}
+ * se expone como dos campos separados ({@code packaging_date} y {@code production_time})
+ * para ajustarse a cómo los modales consumen la información.
  */
 @Data
 @Builder
@@ -33,20 +39,24 @@ public class PaletDetailResponseDTO implements Serializable {
 	@JsonProperty(value = "batch_number")
 	private String batchNumber;
 
-	@JsonProperty(value = "packaging_datetime")
-	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-	private LocalDateTime packagingDateTime;
+	@JsonProperty(value = "packaging_date")
+	@JsonFormat(pattern = "yyyy-MM-dd")
+	private LocalDate packagingDate;
+
+	@JsonProperty(value = "production_time")
+	@JsonFormat(pattern = "HH:mm:ss")
+	private LocalTime productionTime;
 
 	@JsonProperty(value = "product_use_by_date")
 	@JsonFormat(pattern = "yyyy-MM-dd")
 	private LocalDate productUseByDate;
 
 	@JsonProperty(value = "create_at")
-	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime createdAt;
 
 	@JsonProperty(value = "updated_at")
-	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+	@JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime updatedAt;
 
 	@JsonProperty(value = "pack_level")

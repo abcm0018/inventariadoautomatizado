@@ -43,20 +43,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Controlador REST para la gestión de palets con tecnología RFID
+ * Controlador REST para la gestión de palets con tecnología RFID.
  * <p>
- * CARACTERÍSTICAS PRINCIPALES:
- * - Registro automático de palets escaneados
- * - Check-in automático en el primer escaneo del día
- * - Caché Redis de 3 niveles para optimizar rendimiento
- * - Trazabilidad completa por lote y producto
- * - Alertas de caducidad (FIFO)
- * - Estadísticas de producción en tiempo real
- * <p>
- * CAMBIOS CON NUEVA ARQUITECTURA:
- * - Métodos consistentes con PaletService refactorizado
- * - ProductId → PackLevelId en operaciones de creación
- * - Helpers estáticos para validaciones adicionales
+ * Expone operaciones CRUD, consultas de inventario, alertas de caducidad,
+ * estadísticas de producción y el feed en tiempo real del Dashboard.
+ * El registro de un palet incluye resolución automática del turno de trabajo
+ * usando caché Redis de 3 niveles.
  */
 @RestController
 @RequestMapping(value = "/api/v1/palets")
@@ -91,13 +83,7 @@ public class PaletController {
 
 		PaletDetailResponseDTO created = paletService.createPalet(requestDTO);
 
-		return ResponseBuilder.withCreatedElements(
-				HttpStatus.CREATED,
-				true,
-				1,
-				"Palet registrado exitosamente",
-				created
-		);
+		return ResponseBuilder.withCreatedElements(HttpStatus.CREATED, true, 1, "Palet registrado exitosamente", created);
 	}
 
 	@CrossOrigin
@@ -105,15 +91,12 @@ public class PaletController {
 	@GetMapping("/recent-7")
 	public StandardResponse<List<PaletNotificationDTO>> getRecent7Palets() {
 
-		// Creamos el plegable para los 7 últimos palets
-		Pageable pageable = PageRequest.of(0, 7, Sort.by(Sort.Direction.DESC, "createdAt"));
+		Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
 
-		Page<PaletNotificationDTO> recent7pales = paletService.findRecent7Palets(pageable);
+		List<PaletNotificationDTO> content = paletService.findRecent7Palets(pageable).getContent();
 
-		List<PaletNotificationDTO> content = recent7pales.getContent();
-
-		String message = String.format("Se encontraron %d palets recientes.", content.size());
-		return ResponseBuilder.with(HttpStatus.OK, true, message, content);
+		return ResponseBuilder.with(HttpStatus.OK, true,
+				String.format("Se encontraron %d palets recientes.", content.size()), content);
 	}
 
 	@CrossOrigin
@@ -175,13 +158,7 @@ public class PaletController {
 
 		PaletDetailResponseDTO updated = paletService.updatePalet(id, requestDTO);
 
-		return ResponseBuilder.withUpdatedElements(
-				HttpStatus.OK,
-				true,
-				1,
-				"Palet actualizado exitosamente",
-				updated
-		);
+		return ResponseBuilder.withUpdatedElements(HttpStatus.OK, true, 1, "Palet actualizado exitosamente", updated);
 	}
 
 	@CrossOrigin
@@ -227,12 +204,7 @@ public class PaletController {
 
 		List<PaletResponseDTO> palets = paletService.findByProductIdOrderedByExpiry(productId);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				"Palets ordenados por fecha de caducidad (FIFO)",
-				palets
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, "Palets ordenados por fecha de caducidad (FIFO)", palets);
 	}
 
 	@CrossOrigin
@@ -249,12 +221,7 @@ public class PaletController {
 
 		List<PaletResponseDTO> palets = paletService.findOldestPaletsByProductId(productId, limit);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				String.format("%d palets más antiguos obtenidos", palets.size()),
-				palets
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, String.format("%d palets más antiguos obtenidos", palets.size()), palets);
 	}
 
 	@CrossOrigin
@@ -268,12 +235,7 @@ public class PaletController {
 
 		List<PaletResponseDTO> palets = paletService.findNewestPaletsByProductId(productId, limit);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				String.format("%d palets más recientes obtenidos", palets.size()),
-				palets
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, String.format("%d palets más recientes obtenidos", palets.size()), palets);
 	}
 
 	@CrossOrigin
@@ -316,12 +278,7 @@ public class PaletController {
 
 		List<PaletResponseDTO> palets = paletService.findByGtin(gtin);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				String.format("Encontrados %d palets", palets.size()),
-				palets
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, String.format("Encontrados %d palets", palets.size()), palets);
 	}
 
 	@CrossOrigin
@@ -352,12 +309,7 @@ public class PaletController {
 
 		List<PaletResponseDTO> palets = paletService.findByProductIdAndBatchNumber(productId, batchNumber);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				String.format("Encontrados %d palets", palets.size()),
-				palets
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, String.format("Encontrados %d palets", palets.size()), palets);
 	}
 
 	@CrossOrigin
@@ -371,12 +323,7 @@ public class PaletController {
 
 		List<PaletResponseDTO> palets = paletService.findByPackLevelIdAndBatchNumber(packLevelId, batchNumber);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				String.format("Encontrados %d palets", palets.size()),
-				palets
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, String.format("Encontrados %d palets", palets.size()), palets);
 	}
 
 	@CrossOrigin
@@ -421,7 +368,7 @@ public class PaletController {
 
 		String message = palets.isEmpty()
 				? "No hay palets próximos a caducar"
-				: String.format("⚠️ %d palets caducan en los próximos 7 días", palets.size());
+				: String.format("%d palets caducan en los próximos 7 días", palets.size());
 
 		return ResponseBuilder.with(HttpStatus.OK, true, message, palets);
 	}
@@ -440,7 +387,7 @@ public class PaletController {
 
 		String message = palets.isEmpty()
 				? "No hay palets en estado crítico"
-				: String.format("🚨 %d palets en estado crítico (caducan en 3 días)", palets.size());
+				: String.format("%d palets en estado crítico (caducan en 3 días)", palets.size());
 
 		return ResponseBuilder.with(HttpStatus.OK, true, message, palets);
 	}
@@ -459,7 +406,7 @@ public class PaletController {
 
 		String message = palets.isEmpty()
 				? "No hay palets caducados"
-				: String.format("❌ %d palets caducados - RETIRAR INMEDIATAMENTE", palets.size());
+				: String.format("%d palets caducados - retirar de inventario inmediatamente", palets.size());
 
 		return ResponseBuilder.with(HttpStatus.OK, true, message, palets);
 	}
@@ -536,12 +483,7 @@ public class PaletController {
 
 		Map<String, Object> stockByPackLevel = paletService.getStockByPackLevel();
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				"Stock por nivel de embalaje obtenido exitosamente",
-				stockByPackLevel
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, "Stock por nivel de embalaje obtenido exitosamente", stockByPackLevel);
 	}
 
 	@CrossOrigin
@@ -557,12 +499,7 @@ public class PaletController {
 
 		Map<String, Object> details = paletService.getProductInventoryDetails(productId);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				"Detalles de inventario obtenidos exitosamente",
-				details
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, "Detalles de inventario obtenidos exitosamente", details);
 	}
 
 	@CrossOrigin
@@ -579,12 +516,7 @@ public class PaletController {
 
 		Map<String, Object> stats = paletService.getDailyProductionStats(startDate, endDate);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				"Estadísticas de producción obtenidas exitosamente",
-				stats
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, "Estadísticas de producción obtenidas exitosamente", stats);
 	}
 
 	@CrossOrigin
@@ -598,12 +530,7 @@ public class PaletController {
 
 		Map<String, Object> stats = paletService.getProductionByWorkshift(startDate, endDate);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				"Producción por turno obtenida exitosamente",
-				stats
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, "Producción por turno obtenida exitosamente", stats);
 	}
 
 	@CrossOrigin
@@ -620,12 +547,7 @@ public class PaletController {
 
 		Map<String, Object> stats = paletService.getProductionByUser(startDate, endDate);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				"Producción por usuario obtenida exitosamente",
-				stats
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, "Producción por usuario obtenida exitosamente", stats);
 	}
 
 	@CrossOrigin
@@ -653,12 +575,7 @@ public class PaletController {
 
 		Map<String, Object> stats = paletService.getGlobalProductionStatistics();
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				"Estadísticas globales obtenidas exitosamente",
-				stats
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, "Estadísticas globales obtenidas exitosamente", stats);
 	}
 
 	@CrossOrigin
@@ -674,12 +591,7 @@ public class PaletController {
 
 		Map<String, Object> traceability = paletService.getFullTraceability(sscc);
 
-		return ResponseBuilder.with(
-				HttpStatus.OK,
-				true,
-				"Trazabilidad obtenida exitosamente",
-				traceability
-		);
+		return ResponseBuilder.with(HttpStatus.OK, true, "Trazabilidad obtenida exitosamente", traceability);
 	}
 
 	@CrossOrigin

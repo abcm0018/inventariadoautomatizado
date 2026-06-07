@@ -20,12 +20,11 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repositorio para la entidad Palet
+ * Repositorio JPA para la entidad {@link Palet}.
  * <p>
- * CAMBIO ARQUITECTÓNICO:
- * - Las búsquedas ahora se centran en ProductPackLevel (nivel de embalaje específico)
- * - Se mantienen búsquedas por Product a través de JOIN a ProductPackLevel
- * - Todas las queries optimizadas para la nueva estructura relacional
+ * Las búsquedas de inventario se centran en {@code ProductPackLevel} como clave
+ * primaria de consulta, accediendo al producto a través de ella. La información
+ * del operador y el turno se obtiene vía {@code PalletScan} (join a {@code scans}).
  */
 public interface PaletRepository extends JpaRepository<Palet, Long> {
 
@@ -430,9 +429,9 @@ public interface PaletRepository extends JpaRepository<Palet, Long> {
 	List<Palet> findRecentlyModified(Pageable pageable);
 
 	/**
-	 * Busca un Palet y trae todas las relaciones necesarias
-	 * para la notificación de WebSocket en una sola consulta.
-	 * Evita LazyInitializationException en el Event Listener.
+	 * Carga un {@link Palet} por ID con todas las relaciones necesarias para construir
+	 * un {@link com.abcm0018.sai.palets.application.dtos.PaletNotificationDTO} sin
+	 * {@code LazyInitializationException}.
 	 */
 	@Query("SELECT DISTINCT p FROM Palet p "
 			+ "LEFT JOIN FETCH p.scans sc "
@@ -444,5 +443,28 @@ public interface PaletRepository extends JpaRepository<Palet, Long> {
 			+ "JOIN FETCH pl.product prod "
 			+ "WHERE p.id = ?1")
 	Optional<Palet> findWithDetailsById(Long id);
+
+	/**
+	 * Devuelve los palets más recientes con todas las relaciones necesarias para
+	 * construir {@link com.abcm0018.sai.palets.application.dtos.PaletNotificationDTO}
+	 * en una sola consulta SQL, evitando el problema N+1.
+	 * <p>
+	 * Al incluir una colección ({@code scans}), Hibernate aplica la paginación en
+	 * memoria. El tamaño máximo del {@link Pageable} debe mantenerse pequeño (≤ 20)
+	 * para que esto no sea un problema de rendimiento.
+	 */
+	@Query(
+			value = """
+					SELECT DISTINCT p FROM Palet p
+					LEFT JOIN FETCH p.scans sc
+					LEFT JOIN FETCH sc.workshift w
+					LEFT JOIN FETCH w.shift sh
+					LEFT JOIN FETCH w.user wu
+					JOIN FETCH p.productPackLevel pl
+					JOIN FETCH pl.product prod
+					""",
+			countQuery = "SELECT COUNT(DISTINCT p) FROM Palet p"
+	)
+	Page<Palet> findRecentPaletsWithDetails(Pageable pageable);
 }
 

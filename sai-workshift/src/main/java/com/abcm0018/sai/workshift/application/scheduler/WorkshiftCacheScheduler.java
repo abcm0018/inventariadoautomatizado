@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.abcm0018.sai.workshift.domain.entity.Workshift;
 import com.abcm0018.sai.workshift.domain.repository.WorkshiftRepository;
+import com.abcm0018.sai.workshift.shared.WorkshiftCacheConstants;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +31,6 @@ public class WorkshiftCacheScheduler {
 	private final WorkshiftRepository workshiftRepository;
 	private final RedisTemplate<String, Long> workshiftRedisTemplate;
 
-	// Constantes
-	private static final String WORKSHIFT_CACHE_KEY_PATTERN = "workshift:user:%d:date:%s";
-	private static final Duration CACHE_TTL = Duration.ofHours(24);
 
 	/**
 	 * Precarga todos los workshifts del día actual en Redis
@@ -71,7 +69,7 @@ public class WorkshiftCacheScheduler {
 					workshiftRedisTemplate.opsForValue().set(
 							cacheKey,
 							workshift.getId(),
-							CACHE_TTL
+							WorkshiftCacheConstants.TTL
 					);
 
 					cached++;
@@ -151,14 +149,13 @@ public class WorkshiftCacheScheduler {
 		log.info("Pre-carga manual forzada (HOY + PRÓXIMA SEMANA)");
 
 		// 1. Carga los de hoy
-		doPreloadForDateRange(LocalDate.now(), LocalDate.now(), CACHE_TTL);
+		doPreloadForDateRange(LocalDate.now(), LocalDate.now(), WorkshiftCacheConstants.TTL);
 
 		// 2. Carga los de la próxima semana
 		LocalDate nextMonday = LocalDate.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
 		LocalDate nextFriday = nextMonday.plusDays(4);
 
-		Duration cacheTTL = Duration.ofDays(7);
-		doPreloadForDateRange(nextMonday, nextFriday, cacheTTL);
+		doPreloadForDateRange(nextMonday, nextFriday, WorkshiftCacheConstants.TTL_WEEK);
 	}
 
 	/**
@@ -219,7 +216,7 @@ public class WorkshiftCacheScheduler {
 	 * Construye la clave de Redis para un usuario y fecha
 	 */
 	private String buildCacheKey(Long userId, LocalDate date) {
-		return String.format(WORKSHIFT_CACHE_KEY_PATTERN, userId, date);
+		return String.format(WorkshiftCacheConstants.KEY_PATTERN, userId, date);
 	}
 
 	/**

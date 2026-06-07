@@ -1,6 +1,7 @@
 package com.abcm0018.sai.workshift.application.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -90,5 +91,5 @@ public interface WorkshiftService {
 	 * @param date La fecha del turno
 	 * @return Un Optional con el DTO del Workshift si se encuentra (en caché o BBDD)
 	 */
-	Optional<Workshift> findCachedWorkshiftByEmployeeAndDate(String employeeNumber, LocalDate date);
+	Optional<Workshift> findCachedWorkshiftByEmployeeAndDate(String employeeNumber, LocalDateTime scanDateTime);
 }

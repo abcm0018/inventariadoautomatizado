@@ -1,8 +1,8 @@
 package com.abcm0018.sai.workshift.application.service.impl;
 
 import java.time.DayOfWeek;
-import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
@@ -47,6 +47,7 @@ import com.abcm0018.sai.workshift.domain.repository.WorkshiftRepository;
 import com.abcm0018.sai.workshift.domain.specifications.WorkshiftSpecificationBuilder;
 import com.abcm0018.sai.workshift.exceptions.WorkshiftServiceException;
 import com.abcm0018.sai.workshift.application.service.WorkshiftService;
+import com.abcm0018.sai.workshift.shared.WorkshiftCacheConstants;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,15 +65,15 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 
 	private final RedisTemplate<String, Long> workshiftRedisTemplate;
 
-	// Constantes de negocio
 	private static final int DATA_RETENTION_MONTHS = 12;
-
-	// --- CONSTANTES (copiadas de WorkshiftCacheScheduler) ---
-	private static final String WORKSHIFT_CACHE_KEY_PATTERN = "workshift:user:%d:date:%s";
-	private static final Duration CACHE_TTL = Duration.ofHours(24);
 
 	@Override
 	@Transactional
+	@Caching(evict = {
+			@CacheEvict(value = "workshifts",       allEntries = true),
+			@CacheEvict(value = "workshiftsByUser", allEntries = true),
+			@CacheEvict(value = "workshiftsByDate", allEntries = true)
+	})
 	public Integer generateWorkshiftSchedule(CreateWorkshiftRequestDTO requestDTO) {
 
 		if (Objects.isNull(requestDTO)) {
@@ -83,22 +84,33 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 			throw new WorkshiftServiceException(CustomErrorCode.BAD_REQUEST, "Fecha inicio no puede ser mayor a fecha fin", HttpStatus.BAD_REQUEST);
 		}
 
-		log.info("Preparando el contexto de planificación con fecha inicio {}  y fecha fin: {}", requestDTO.getFromDate(), requestDTO.getToDate());
+		// Fail-fast: dos COUNT queries baratos evitan cargar el contexto completo
+		// si el rango ya está planificado al 100% (operarios × días del rango).
+		List<LocalDate> workingDays = getAllDaysBetween(requestDTO.getFromDate(), requestDTO.getToDate());
+		if (!workingDays.isEmpty()) {
+			long activeOperators = userRepository.countByRoleAndActiveTrue(Role.OPERATOR);
+			long expected = (long) workingDays.size() * activeOperators;
+			long existing  = workshiftRepository.countByDateBetween(requestDTO.getFromDate(), requestDTO.getToDate());
+			if (expected > 0 && existing >= expected) {
+				log.info("Rango [{} – {}] ya planificado ({}/{} turnos). Sin cambios.",
+						requestDTO.getFromDate(), requestDTO.getToDate(), existing, expected);
+				return 0;
+			}
+		}
 
-		// 1. Preparar contexto
-		PlanningContext context = preparePlanningContext(requestDTO.getFromDate(), requestDTO.getToDate());
+		log.info("Preparando el contexto de planificación: {} → {}", requestDTO.getFromDate(), requestDTO.getToDate());
 
-		log.info("Planificando turnos para {} operarios usando para {} tipos de turnos.",
-				context.getOperators().size(), context.getActiveShifts().size());
+		PlanningContext context = preparePlanningContext(requestDTO.getFromDate(), requestDTO.getToDate(), false);
 
-		// 2. Calulamos los turnos a asignar
+		log.info("Planificando turnos para {} operarios, {} tipos de turno.", context.getOperators().size(), context.getActiveShifts().size());
+
 		List<Workshift> workshiftsToSave = calculateRotation(context);
 
-		// 3. Persistencia por Lotes (Batch)
 		if (!workshiftsToSave.isEmpty()) {
 			log.info("Guardando {} nuevos turnos...", workshiftsToSave.size());
-			workshiftRepository.saveAll(workshiftsToSave);
-			return workshiftsToSave.size();
+			List<Workshift> saved = workshiftRepository.saveAll(workshiftsToSave);
+			cacheWorkshiftsInRedis(saved);
+			return saved.size();
 		}
 
 		log.warn("No se han generado asignaciones de turno para las fechas indicadas.");
@@ -154,11 +166,21 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 			validateNoConflict(currentWorkshift.getUser(), effectiveDate, effectiveShift, id);
 		}
 
+		// Capturar la clave Redis antes de mutar la entidad
+		Long userId  = currentWorkshift.getUser().getId();
+		LocalDate oldDate = currentWorkshift.getDate();
+
 		currentWorkshift.setDate(effectiveDate);
 		currentWorkshift.setShift(effectiveShift);
 		Workshift updated = workshiftRepository.save(currentWorkshift);
 
 		log.warn("AUDIT: Workshift {} actualizado manualmente | Motivo: {}", id, requestDTO.getReason());
+
+		// Sincronizar Redis: evictar la clave antigua si la fecha cambió, luego escribir la nueva
+		if (!oldDate.equals(effectiveDate)) {
+			evictRedisKey(userId, oldDate);
+		}
+		cacheWorkshiftsInRedis(List.of(updated));
 
 		// TODO: Registrar en auditoría
 		// auditService.logWorkshiftUpdate(updated, requestDTO.getReason());
@@ -182,7 +204,6 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 	})
 	public int deleteWorkshift(Long id) {
 		log.info("Eliminando workshift {}", id);
-		int total = 1;
 		Workshift workshift;
 		try {
 			workshift = getWorkshiftEntityById(id);
@@ -193,11 +214,16 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 			throw new RuntimeException(e);
 		}
 
+		// Capturar datos para Redis antes de eliminar la entidad
+		Long userId = workshift.getUser().getId();
+		LocalDate date = workshift.getDate();
+
 		// Timesheet count check delegated to sai-timesheet module (cross-module boundary)
 
 		workshiftRepository.delete(workshift);
+		evictRedisKey(userId, date);
 		log.info("Workshift {} eliminado exitosamente", id);
-		return total;
+		return 1;
 	}
 
 	@Override
@@ -263,7 +289,7 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 		log.info("[CRON] Iniciando generación de turnos: {} al {}", nextMonday, nextSunday);
 
 		try {
-			PlanningContext context = preparePlanningContext(nextMonday, nextSunday);
+			PlanningContext context = preparePlanningContext(nextMonday, nextSunday, true);
 
 			List<Workshift> generatedWorkshifts = calculateRotation(context);
 
@@ -272,8 +298,9 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 				return;
 			}
 
-			workshiftRepository.saveAll(generatedWorkshifts);
-			log.info("[CRON] ÉXITO: Generados {} turnos para {} operadores.", generatedWorkshifts.size(), context.getOperators().size());
+			List<Workshift> saved = workshiftRepository.saveAll(generatedWorkshifts);
+			cacheWorkshiftsInRedis(saved);
+			log.info("[CRON] ÉXITO: Generados {} turnos para {} operadores.", saved.size(), context.getOperators().size());
 		} catch (Exception e) {
 			log.error("[CRON] ERROR CRÍTICO: Fallo al generar la planificación semanal.", e);
 			throw e;
@@ -281,9 +308,12 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 	}
 
 	@Override
-	public Optional<Workshift> findCachedWorkshiftByEmployeeAndDate(String employeeNumber, LocalDate date) {
+	public Optional<Workshift> findCachedWorkshiftByEmployeeAndDate(String employeeNumber, LocalDateTime scanDateTime) {
 
-		log.debug("Buscando workshift cacheado para empleado {} en fecha {}", employeeNumber, date);
+		final LocalDate date     = scanDateTime.toLocalDate();
+		final LocalTime scanTime = scanDateTime.toLocalTime();
+
+		log.debug("Buscando workshift para empleado {} en fecha {} hora {}", employeeNumber, date, scanTime);
 
 		// 1. Buscar el usuario
 		Optional<User> userOpt = userRepository.findByEmployeeNumber(employeeNumber);
@@ -293,46 +323,63 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 		}
 		User user = userOpt.get();
 
-		// 2. Construir clave de caché
-		String cacheKey = String.format(WORKSHIFT_CACHE_KEY_PATTERN, user.getId(), date.toString());
+		// 2. Construir clave de caché (por fecha)
+		String cacheKey = String.format(WorkshiftCacheConstants.KEY_PATTERN, user.getId(), date.toString());
 
 		Long workshiftId = null;
 		try {
-			// 3. Intentar leer ID desde Redis
 			workshiftId = workshiftRedisTemplate.opsForValue().get(cacheKey);
 		} catch (Exception e) {
 			log.error("Error al leer de Redis (key: {}). Cayendo a BBDD. Error: {}", cacheKey, e.getMessage());
 		}
 
-		// 4. CACHE HIT
+		// 3. CACHE HIT: validar que la hora del escaneo sigue dentro de la franja del turno cacheado
 		if (workshiftId != null) {
 			log.debug("Cache HIT para clave {}. Workshift ID: {}", cacheKey, workshiftId);
-			Workshift workshift =  workshiftRepository.findById(workshiftId).orElseThrow(
+			Workshift cached = workshiftRepository.findById(workshiftId).orElseThrow(
 					() -> new WorkshiftServiceException(CustomErrorCode.NOT_FOUND, "No existe el turno ", HttpStatus.NOT_FOUND));
 
-			return Optional.of(workshift);
+			if (cached.getShift().isTimeWithinShift(scanTime)) {
+				return Optional.of(cached);
+			}
+
+			// La hora no coincide con el turno cacheado: evictar y releer desde BD
+			log.warn("Cache HIT pero hora {} fuera de la franja del turno {} ({}–{}). Evictando y releyendo.",
+					scanTime, cached.getShift().getShiftType(),
+					cached.getShift().getStartTime(), cached.getShift().getEndTime());
+			evictRedisKey(user.getId(), date);
 		}
 
-		// 5. CACHE MISS
+		// 4. CACHE MISS o time-mismatch: consultar BD con Shift cargado (evita N+1)
 		log.warn("Cache MISS para clave {}. Consultando base de datos...", cacheKey);
-		List<Workshift> shiftsFromDB = workshiftRepository.findByUserAndDate(user, date);
+		List<Workshift> shiftsFromDB = workshiftRepository.findByUserAndDateWithShift(user, date);
 
 		if (shiftsFromDB.isEmpty()) {
 			log.debug("No se encontró Workshift en BBDD para clave {}", cacheKey);
-			return Optional.empty(); // Realmente no existe
+			return Optional.empty();
 		}
 
-		// 6. Encontrado en BBDD, repoblar caché
-		Workshift foundShift = shiftsFromDB.get(0);
+		// 5. Seleccionar el turno cuya franja horaria contiene la hora del escaneo
+		Workshift matched = shiftsFromDB.stream()
+				.filter(w -> w.getShift().isTimeWithinShift(scanTime))
+				.findFirst()
+				.orElseGet(() -> {
+					log.warn("Hora {} no encaja en ninguna franja para empleado {} en {}. Usando primer turno del día como fallback.",
+							scanTime, employeeNumber, date);
+					return shiftsFromDB.get(0);
+				});
+
+		// 6. Repoblar caché con el turno seleccionado
 		try {
-			log.info("Repoblando caché (miss) para clave {}.", cacheKey);
-			workshiftRedisTemplate.opsForValue().set(cacheKey, foundShift.getId(), CACHE_TTL);
+			log.info("Repoblando caché para clave {}. Turno seleccionado: {} ({}–{}).",
+					cacheKey, matched.getShift().getShiftType(),
+					matched.getShift().getStartTime(), matched.getShift().getEndTime());
+			workshiftRedisTemplate.opsForValue().set(cacheKey, matched.getId(), WorkshiftCacheConstants.TTL);
 		} catch (Exception e) {
 			log.error("Error al repoblar Redis (key: {}) tras un cache miss. Error: {}", cacheKey, e.getMessage());
 		}
 
-		// 7. Devolver el DTO
-		return foundShift != null ? Optional.of(foundShift) : Optional.empty();
+		return Optional.of(matched);
 	}
 
 	/**
@@ -384,7 +431,7 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 		}
 	}
 
-	private PlanningContext preparePlanningContext(LocalDate start, LocalDate end) {
+	private PlanningContext preparePlanningContext(LocalDate start, LocalDate end, boolean workDaysOnly) {
 
 		List<User> operators = userRepository.findByRoleAndActiveTrue(Role.OPERATOR);
 		if (operators.isEmpty()) {
@@ -422,9 +469,13 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 						(existing, replacement) -> existing
 				));
 
+		List<LocalDate> days = workDaysOnly
+				? getWorkDaysBetween(start, end)
+				: getAllDaysBetween(start, end);
+
 		// CONSTRUCCIÓN DEL CONTEXTO INMUTABLE
 		return PlanningContext.builder()
-				.workingDays(getWorkDaysBetween(start, end)) // Calculamos días hábiles
+				.workingDays(days)
 				.operators(operators)
 				.activeShifts(shifts)
 				.occupiedDatesMap(occupiedDatesMap)
@@ -511,12 +562,54 @@ public class WorkshiftServiceImpl implements WorkshiftService {
 		}
 	}
 
+	/**
+	 * Elimina la clave Redis {@code workshift:user:{userId}:date:{date}}.
+	 * Un fallo de Redis no propaga excepción: la BD sigue siendo la fuente de verdad.
+	 */
+	private void evictRedisKey(Long userId, LocalDate date) {
+		try {
+			String key = String.format(WorkshiftCacheConstants.KEY_PATTERN, userId, date.toString());
+			workshiftRedisTemplate.delete(key);
+			log.debug("Redis evictado: {}", key);
+		} catch (Exception e) {
+			log.error("Error evictando Redis key (userId={}, date={}): {}", userId, date, e.getMessage());
+		}
+	}
+
+	/**
+	 * Escribe las claves Redis {@code workshift:user:{userId}:date:{date} → workshiftId}
+	 * para cada turno de la lista. El TTL es de 24 horas.
+	 * <p>
+	 * Cada clave se escribe de forma independiente: un fallo en Redis no aborta la
+	 * transacción ni impide que los datos queden persistidos en MySQL.
+	 */
+	private void cacheWorkshiftsInRedis(List<Workshift> workshifts) {
+		int cached = 0;
+		for (Workshift ws : workshifts) {
+			try {
+				String key = String.format(WorkshiftCacheConstants.KEY_PATTERN,
+						ws.getUser().getId(), ws.getDate().toString());
+				workshiftRedisTemplate.opsForValue().set(key, ws.getId(), WorkshiftCacheConstants.TTL);
+				cached++;
+			} catch (Exception e) {
+				log.error("Error poblando Redis para workshift {} (user={}, date={}): {}",
+						ws.getId(), ws.getUser().getId(), ws.getDate(), e.getMessage());
+			}
+		}
+		log.info("Redis: {}/{} claves de turno escritas.", cached, workshifts.size());
+	}
+
 	private List<LocalDate> getWorkDaysBetween(LocalDate startDate, LocalDate endDate) {
 		return startDate.datesUntil(endDate.plusDays(1))
 				.filter(date -> {
 					DayOfWeek day = date.getDayOfWeek();
 					return day != DayOfWeek.SATURDAY && day != DayOfWeek.SUNDAY;
-				}).toList();
+				})
+				.toList();
+	}
+
+	private List<LocalDate> getAllDaysBetween(LocalDate startDate, LocalDate endDate) {
+		return startDate.datesUntil(endDate.plusDays(1)).toList();
 	}
 
 }
