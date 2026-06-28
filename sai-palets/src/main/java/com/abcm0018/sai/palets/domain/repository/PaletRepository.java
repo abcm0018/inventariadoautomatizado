@@ -466,5 +466,61 @@ public interface PaletRepository extends JpaRepository<Palet, Long> {
 			countQuery = "SELECT COUNT(DISTINCT p) FROM Palet p"
 	)
 	Page<Palet> findRecentPaletsWithDetails(Pageable pageable);
+
+	/**
+	 * Devuelve los palets cuyo escaneo ({@code scannedAt}) cae dentro del rango
+	 * indicado, con todas las relaciones necesarias para
+	 * {@link com.abcm0018.sai.palets.application.dtos.PaletNotificationDTO}.
+	 * <p>
+	 * Usado por el endpoint de actividad del turno en curso. El rango se calcula
+	 * en el servicio a partir del catálogo {@code Shift} para manejar correctamente
+	 * los turnos que cruzan la medianoche.
+	 */
+	@Query(
+			value = """
+					SELECT DISTINCT p FROM Palet p
+					LEFT JOIN FETCH p.scans sc
+					LEFT JOIN FETCH sc.workshift w
+					LEFT JOIN FETCH w.shift sh
+					LEFT JOIN FETCH w.user wu
+					JOIN FETCH p.productPackLevel pl
+					JOIN FETCH pl.product prod
+					WHERE sc.scannedAt BETWEEN :from AND :to
+					""",
+			countQuery = """
+					SELECT COUNT(DISTINCT p) FROM Palet p
+					JOIN p.scans sc
+					WHERE sc.scannedAt BETWEEN :from AND :to
+					"""
+	)
+	Page<Palet> findRecentPaletsByScannedAtBetween(
+			@Param("from") LocalDateTime from,
+			@Param("to") LocalDateTime to,
+			Pageable pageable);
+
+	/**
+	 * Cuenta el total de palets escaneados en el rango de tiempo del turno.
+	 */
+	@Query("""
+			SELECT COUNT(DISTINCT p) FROM Palet p
+			JOIN p.scans sc
+			WHERE sc.scannedAt BETWEEN :from AND :to
+			""")
+	Long countPaletsByScannedAtBetween(
+			@Param("from") LocalDateTime from,
+			@Param("to") LocalDateTime to);
+
+	/**
+	 * Cuenta los palets caducados escaneados en el rango de tiempo del turno.
+	 */
+	@Query("""
+			SELECT COUNT(DISTINCT p) FROM Palet p
+			JOIN p.scans sc
+			WHERE sc.scannedAt BETWEEN :from AND :to
+			AND p.productUseByDate < CURRENT_DATE
+			""")
+	Long countExpiredPaletsByScannedAtBetween(
+			@Param("from") LocalDateTime from,
+			@Param("to") LocalDateTime to);
 }
 

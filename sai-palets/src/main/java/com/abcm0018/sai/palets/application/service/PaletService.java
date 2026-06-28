@@ -30,6 +30,10 @@ public interface PaletService {
 	PaletDetailResponseDTO findBySscc(String sscc);
 	Page<PaletSummaryResponseDTO> findAll(Pageable pageable);
 	Page<PaletNotificationDTO> findRecent7Palets(Pageable pageable);
+
+	List<PaletNotificationDTO> findRecentPaletsInCurrentShift();
+
+	Map<String, Long> getKpisCurrentShift();
 	PaletDetailResponseDTO updatePalet(Long id, UpdatePaletRequestDTO request);
 	void deletePalet(Long id);
 

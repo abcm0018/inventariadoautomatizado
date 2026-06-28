@@ -20,6 +20,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -52,7 +53,9 @@ import com.abcm0018.sai.productos.domain.entity.Product;
 import com.abcm0018.sai.productos.domain.entity.ProductPackLevel;
 import com.abcm0018.sai.productos.domain.repository.ProductPackLevelRepository;
 import com.abcm0018.sai.shared.constants.CustomErrorCode;
+import com.abcm0018.sai.shift.domain.entity.Shift;
 import com.abcm0018.sai.shift.domain.enums.ShiftType;
+import com.abcm0018.sai.shift.domain.repository.ShiftRepository;
 import com.abcm0018.sai.timesheet.application.dtos.TimesheetDetailResponseDTO;
 import com.abcm0018.sai.timesheet.application.service.TimesheetService;
 import com.abcm0018.sai.users.domain.entity.User;
@@ -95,6 +98,7 @@ public class PaletServiceImpl implements PaletService {
 	private final ScanStationRepository scanStationRepository;
 	private final WorkshiftService workshiftService;
 	private final WorkshiftRepository workshiftRepository;
+	private final ShiftRepository shiftRepository;
 	private final ProductPackLevelRepository productPackLevelRepository;
 	private final PaletValidationService validationService;
 
@@ -199,6 +203,64 @@ public class PaletServiceImpl implements PaletService {
 	@Transactional(readOnly = true)
 	public Page<PaletNotificationDTO> findRecent7Palets(Pageable pageable) {
 		return paletRepository.findRecentPaletsWithDetails(pageable).map(paletMapper::toResponsePaletNotification);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<PaletNotificationDTO> findRecentPaletsInCurrentShift() {
+		LocalDateTime[] window = getCurrentShiftWindow();
+		log.debug("Consultando palets del turno actual [{} → {}]", window[0], window[1]);
+		Pageable pageable = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "createdAt"));
+		return paletRepository.findRecentPaletsByScannedAtBetween(window[0], window[1], pageable)
+				.map(paletMapper::toResponsePaletNotification)
+				.getContent();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Map<String, Long> getKpisCurrentShift() {
+		LocalDateTime[] window = getCurrentShiftWindow();
+		Long shiftStock   = paletRepository.countPaletsByScannedAtBetween(window[0], window[1]);
+		Long shiftExpired = paletRepository.countExpiredPaletsByScannedAtBetween(window[0], window[1]);
+		log.debug("KPIs turno actual [{} → {}] — stock: {}, caducados: {}", window[0], window[1], shiftStock, shiftExpired);
+		return Map.of("shiftStock", shiftStock, "shiftExpired", shiftExpired);
+	}
+
+	// ========== HELPERS PRIVADOS ==========
+
+	/**
+	 * Calcula el inicio y fin del turno activo en este momento usando el catálogo
+	 * de turnos. Maneja correctamente los turnos que cruzan la medianoche.
+	 *
+	 * @return array de dos elementos: [shiftStart, shiftEnd]
+	 */
+	private LocalDateTime[] getCurrentShiftWindow() {
+		LocalTime now = LocalTime.now();
+		LocalDateTime nowDateTime = LocalDateTime.now();
+
+		Shift currentShift = shiftRepository.findShiftContainingTime(now)
+				.orElseThrow(() -> new PaletsServiceException(
+						CustomErrorCode.NOT_FOUND,
+						"No se encontró ningún turno activo para la hora actual: " + now,
+						HttpStatus.NOT_FOUND));
+
+		LocalDateTime shiftStart;
+		LocalDateTime shiftEnd;
+
+		if (currentShift.crossesMidnight()) {
+			// Turno de noche: si ahora son las 02:00, el turno empezó ayer a las 22:00
+			if (now.isBefore(currentShift.getEndTime())) {
+				shiftStart = nowDateTime.toLocalDate().minusDays(1).atTime(currentShift.getStartTime());
+			} else {
+				shiftStart = nowDateTime.toLocalDate().atTime(currentShift.getStartTime());
+			}
+			shiftEnd = shiftStart.plusDays(1).toLocalDate().atTime(currentShift.getEndTime());
+		} else {
+			shiftStart = nowDateTime.toLocalDate().atTime(currentShift.getStartTime());
+			shiftEnd = nowDateTime.toLocalDate().atTime(currentShift.getEndTime());
+		}
+
+		return new LocalDateTime[]{ shiftStart, shiftEnd };
 	}
 
 	@Override

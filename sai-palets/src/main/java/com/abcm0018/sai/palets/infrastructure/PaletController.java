@@ -100,6 +100,36 @@ public class PaletController {
 	}
 
 	@CrossOrigin
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'OPERATOR')")
+	@GetMapping("/kpis-current-shift")
+	@Operation(
+			summary = "KPIs del turno en curso",
+			description = "Devuelve el total de palets escaneados y los caducados detectados durante el turno activo."
+	)
+	public StandardResponse<Map<String, Long>> getKpisCurrentShift() {
+
+		Map<String, Long> kpis = paletService.getKpisCurrentShift();
+
+		return ResponseBuilder.with(HttpStatus.OK, true, "KPIs del turno actual obtenidos", kpis);
+	}
+
+	@CrossOrigin
+	@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'OPERATOR')")
+	@GetMapping("/recent-current-shift")
+	@Operation(
+			summary = "Obtener actividad del turno en curso",
+			description = "Devuelve los últimos 20 palets escaneados durante el turno activo en este momento. " +
+					"El turno se determina automáticamente a partir de la hora del servidor y el catálogo de turnos."
+	)
+	public StandardResponse<List<PaletNotificationDTO>> getRecentPaletsCurrentShift() {
+
+		List<PaletNotificationDTO> content = paletService.findRecentPaletsInCurrentShift();
+
+		return ResponseBuilder.with(HttpStatus.OK, true,
+				String.format("Se encontraron %d palets en el turno actual.", content.size()), content);
+	}
+
+	@CrossOrigin
 	@GetMapping("/{id}")
 	@Operation(summary = "Obtener palet por ID")
 	public StandardResponse<PaletDetailResponseDTO> getPaletById(@PathVariable @Parameter(description = "ID del palet") Long id) {
