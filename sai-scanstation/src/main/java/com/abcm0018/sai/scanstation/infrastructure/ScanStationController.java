@@ -146,7 +146,7 @@ public class ScanStationController {
     })
     public StandardResponse<Void> deleteShift(@PathVariable @Parameter(description = "ID del turno") Long id) {
 
-        log.warn("Desactivando turno con ID: {}", id);
+        log.warn("Desactivando estación de escaneo con ID: {}", id);
 
         scanStationService.deleteScanStation(id);
 
