@@ -153,5 +153,33 @@ public class ScanStationController {
         return ResponseBuilder.withDeletedElements(HttpStatus.OK, true, 1, "Estación de escaneo desactivada exitosamente");
     }
 
+    @CrossOrigin
+    @PutMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Activar una estación de escaneo",
+            description = "Reactiva una estación de escaneo previamente desactivada"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Estación de escaneo activada exitosamente"),
+            @ApiResponse(responseCode = "403", description = "No autorizado para realizar esta operación"),
+            @ApiResponse(responseCode = "404", description = "Estación de escaneo no encontrada")
+    })
+    public StandardResponse<ScanStationResponseDTO> activateScanStation(
+            @PathVariable Long id) {
+
+        log.info("Activando estación de escaneo con ID: {}", id);
+
+        ScanStationResponseDTO activated =
+                scanStationService.activateScanStation(id);
+
+        return ResponseBuilder.withUpdatedElements(
+                HttpStatus.OK,
+                true,
+                1,
+                "Estación de escaneo activada exitosamente",
+                activated
+        );
+    }
 
 }

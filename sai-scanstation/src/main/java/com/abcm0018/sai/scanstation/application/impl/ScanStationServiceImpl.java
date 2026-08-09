@@ -102,6 +102,26 @@ public class ScanStationServiceImpl implements ScanStationService {
         log.info("Turno {} desactivado exitosamente", id);
     }
 
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "scans", key = "#id"),
+            @CacheEvict(value = "scans", allEntries = true)
+    })
+    public ScanStationResponseDTO activateScanStation(Long id) {
+        log.info("Activando estación de escaneo {}", id);
+
+        ScanStation station = getScanStationEntityById(id);
+
+        station.setStatus(ScanStatus.ACTIVE);
+
+        ScanStation saved = scanStationRepository.save(station);
+
+        log.info("Estación de escaneo {} activada correctamente", id);
+
+        return convertToResponse(saved);
+    }
+
     /**
      * Obtiene una entidad ScanStation por ID
      * Método interno para evitar conversión a DTO
